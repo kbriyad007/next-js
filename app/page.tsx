@@ -39,12 +39,12 @@ export default function Home() {
   return (
     <Layout>
       <div className="p-6">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-6">
           User Requests
         </h1>
-        <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+        <div className="overflow-x-auto bg-white dark:bg-gray-900 shadow-md rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+            <thead className="bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-700 dark:to-indigo-800 text-white">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold uppercase">
                   Customer Name
@@ -69,25 +69,29 @@ export default function Home() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
               {requests.map((req, idx) => (
                 <tr
                   key={req.id}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  className={
+                    idx % 2 === 0
+                      ? "bg-white dark:bg-gray-900"
+                      : "bg-gray-50 dark:bg-gray-800"
+                  }
                 >
-                  <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req["Customer-Name"]}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req["User-Email"]}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req.Address}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 whitespace-normal w-64">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-normal w-64">
                     {req.Description}
                   </td>
-                  <td className="px-4 py-3 text-blue-600 whitespace-nowrap">
+                  <td className="px-4 py-3 text-blue-600 dark:text-blue-400 whitespace-nowrap">
                     {Array.isArray(req["Product-Links"]) &&
                     req["Product-Links"].length > 0 ? (
                       <div className="flex flex-col gap-1">
@@ -104,20 +108,22 @@ export default function Home() {
                                 "width=800,height=600"
                               );
                             }}
-                            className="text-blue-500 underline hover:text-blue-800"
+                            className="text-blue-500 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                           >
                             Link-{i + 1}
                           </a>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-gray-400">No Links</span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        No Links
+                      </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req.Quantity}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req.Time?.seconds
                       ? new Date(req.Time.seconds * 1000).toLocaleString()
                       : "N/A"}
