@@ -21,7 +21,7 @@ type RequestData = {
 };
 
 export default function Home() {
-  const [requests, setRequests] = useState<RequestData[]>([]); // ✅ Typed state
+  const [requests, setRequests] = useState<RequestData[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +52,7 @@ export default function Home() {
                 <th className="px-4 py-3 text-left font-semibold uppercase">
                   User Email
                 </th>
-                <th className="px-4 py-3 text-left font-semibold uppercase">
+                <th className="px-4 py-3 text-left font-semibold uppercase w-64">
                   Address
                 </th>
                 <th className="px-4 py-3 text-left font-semibold uppercase w-64">
@@ -85,7 +85,7 @@ export default function Home() {
                   <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
                     {req["User-Email"]}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-normal w-64">
                     {req.Address}
                   </td>
                   <td className="px-4 py-3 text-gray-800 dark:text-gray-200 whitespace-normal w-64">
