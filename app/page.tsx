@@ -5,16 +5,31 @@ import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
 
+// ✅ Define the type for your request objects
+type RequestData = {
+  id: string;
+  "Customer-Name": string;
+  "User-Email": string;
+  Address: string;
+  Description: string;
+  Quantity: number;
+  Time?: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  "Product-Links"?: string[];
+};
+
 export default function Home() {
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<RequestData[]>([]); // ✅ Typed state
 
   useEffect(() => {
     const fetchData = async () => {
       const querySnapshot = await getDocs(collection(db, "user_request"));
-      const data = querySnapshot.docs.map((doc) => ({
+      const data: RequestData[] = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as RequestData[];
       setRequests(data);
     };
 
