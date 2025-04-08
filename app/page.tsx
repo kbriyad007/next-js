@@ -36,7 +36,7 @@ export default function Home() {
           ...doc.data(),
         })) as RequestData[];
         setRequests(data);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch data.");
       } finally {
         setLoading(false);
