@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp } from "lucide-react"; // You can use Lucide icons for more polish
+import { ArrowDown, ArrowUp } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -52,6 +52,60 @@ export default function Home() {
     setSortBy(key);
   };
 
+  const generateInvoice = (req: RequestData) => {
+    const invoiceWindow = window.open("", "Invoice", "width=800,height=600");
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Invoice - ${req["Customer-Name"]}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #f9f9f9; }
+            a { color: #007bff; text-decoration: none; }
+          </style>
+        </head>
+        <body>
+          <h1>Invoice</h1>
+          <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
+          <p><strong>Email:</strong> ${req["User-Email"]}</p>
+          <p><strong>Address:</strong> ${req.Address}</p>
+          <p><strong>Date:</strong> ${req.Time?.seconds ? new Date(req.Time.seconds * 1000).toLocaleString() : "N/A"}</p>
+
+          <table>
+            <tr>
+              <th>Description</th>
+              <th>Quantity</th>
+            </tr>
+            <tr>
+              <td>${req.Description}</td>
+              <td>${req.Quantity}</td>
+            </tr>
+          </table>
+
+          ${
+            req["Product-Links"] && req["Product-Links"].length > 0
+              ? `<p><strong>Product Links:</strong><br>${req["Product-Links"]
+                  .map(
+                    (link, i) => `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
+                  )
+                  .join("")}</p>`
+              : ""
+          }
+
+          <p style="margin-top: 30px;">Thank you for your request!</p>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+
+    invoiceWindow?.document.write(htmlContent);
+    invoiceWindow?.document.close();
+  };
+
   const filteredRequests = requests.filter((req) => {
     const query = search.toLowerCase();
     return (
@@ -89,7 +143,6 @@ export default function Home() {
           User Requests
         </h1>
 
-        {/* Search */}
         <input
           type="text"
           placeholder="Search by name, email, or address..."
@@ -178,25 +231,23 @@ export default function Home() {
                         ? new Date(req.Time.seconds * 1000).toLocaleString()
                         : "N/A"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex flex-col gap-1">
                       <a
                         href={`https://wa.me/?text=Hello%20${encodeURIComponent(
                           req["Customer-Name"]
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          fill="currentColor"
-                          viewBox="0 0 448 512"
-                        >
-                          <path d="..." />
-                        </svg>
+                        WhatsApp
                       </a>
+                      <button
+                        onClick={() => generateInvoice(req)}
+                        className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 underline"
+                      >
+                        Invoice
+                      </button>
                     </td>
                   </tr>
                 ))}
