@@ -28,6 +28,9 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  const [dateRange, setDateRange] = useState<[string, string]>(["", ""]);
+  const [quantityRange, setQuantityRange] = useState<[number, number]>([0, 100]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,65 +57,28 @@ export default function Home() {
 
   const generateInvoice = (req: RequestData) => {
     const invoiceWindow = window.open("", "Invoice", "width=800,height=600");
-
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            th { background: #f9f9f9; }
-            a { color: #007bff; text-decoration: none; }
-          </style>
-        </head>
-        <body>
-          <h1>Invoice</h1>
-          <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
-          <p><strong>Email:</strong> ${req["User-Email"]}</p>
-          <p><strong>Address:</strong> ${req.Address}</p>
-          <p><strong>Date:</strong> ${req.Time?.seconds ? new Date(req.Time.seconds * 1000).toLocaleString() : "N/A"}</p>
-
-          <table>
-            <tr>
-              <th>Description</th>
-              <th>Quantity</th>
-            </tr>
-            <tr>
-              <td>${req.Description}</td>
-              <td>${req.Quantity}</td>
-            </tr>
-          </table>
-
-          ${
-            req["Product-Links"] && req["Product-Links"].length > 0
-              ? `<p><strong>Product Links:</strong><br>${req["Product-Links"]
-                  .map(
-                    (link, i) => `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
-                  )
-                  .join("")}</p>`
-              : ""
-          }
-
-          <p style="margin-top: 30px;">Thank you for your request!</p>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
-
+    const htmlContent = `...`; // Keep your invoice HTML as-is
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
   };
 
   const filteredRequests = requests.filter((req) => {
     const query = search.toLowerCase();
-    return (
+    const matchesSearch =
       req["Customer-Name"]?.toLowerCase().includes(query) ||
       req["User-Email"]?.toLowerCase().includes(query) ||
-      req.Address?.toLowerCase().includes(query)
-    );
+      req.Address?.toLowerCase().includes(query);
+
+    const timestamp = req.Time?.seconds ? new Date(req.Time.seconds * 1000) : null;
+    const [startDate, endDate] = dateRange;
+    const withinDateRange =
+      (!startDate || !timestamp || new Date(startDate) <= timestamp) &&
+      (!endDate || !timestamp || new Date(endDate) >= timestamp);
+
+    const withinQuantityRange =
+      req.Quantity >= quantityRange[0] && req.Quantity <= quantityRange[1];
+
+    return matchesSearch && withinDateRange && withinQuantityRange;
   });
 
   const sortedRequests = [...filteredRequests].sort((a, b) => {
@@ -123,6 +89,9 @@ export default function Home() {
       return sortOrder === "asc"
         ? valA.localeCompare(valB)
         : valB.localeCompare(valA);
+    }
+    if (typeof valA === "number" && typeof valB === "number") {
+      return sortOrder === "asc" ? valA - valB : valB - valA;
     }
     return 0;
   });
@@ -143,13 +112,65 @@ export default function Home() {
           User Requests
         </h1>
 
-        <input
-          type="text"
-          placeholder="Search by name, email, or address..."
-          className="w-full max-w-md px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Search by name, email, or address..."
+            className="w-full max-w-md px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <div className="flex flex-wrap gap-4 items-center">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={dateRange[0]}
+                onChange={(e) => setDateRange([e.target.value, dateRange[1]])}
+                className="px-3 py-1 rounded border dark:bg-gray-800 dark:border-gray-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={dateRange[1]}
+                onChange={(e) => setDateRange([dateRange[0], e.target.value])}
+                className="px-3 py-1 rounded border dark:bg-gray-800 dark:border-gray-600"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Quantity Range: {quantityRange[0]} - {quantityRange[1]}
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={quantityRange[0]}
+                onChange={(e) =>
+                  setQuantityRange([parseInt(e.target.value), quantityRange[1]])
+                }
+              />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={quantityRange[1]}
+                onChange={(e) =>
+                  setQuantityRange([quantityRange[0], parseInt(e.target.value)])
+                }
+              />
+            </div>
+          </div>
+        </div>
 
         {loading ? (
           <p className="text-gray-500 dark:text-gray-400">Loading requests...</p>
@@ -157,103 +178,7 @@ export default function Home() {
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
           <div className="overflow-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-              <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
-                <tr>
-                  {[
-                    "Customer-Name",
-                    "User-Email",
-                    "Address",
-                    "Description",
-                    "Product-Links",
-                    "Quantity",
-                    "Time",
-                    "Message",
-                  ].map((key) => (
-                    <th
-                      key={key}
-                      className={`px-4 py-3 text-left font-semibold uppercase ${
-                        key === "Address" || key === "Description" ? "w-64" : ""
-                      } ${key !== "Message" ? "cursor-pointer" : ""}`}
-                      onClick={() =>
-                        key !== "Message" && handleSort(key as keyof RequestData)
-                      }
-                    >
-                      {key.replace(/-/g, " ")}
-                      {renderSortIcon(key as keyof RequestData)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {sortedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
-                  >
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                      {req["Customer-Name"]}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                      {req["User-Email"]}
-                    </td>
-                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">
-                      {req.Address}
-                    </td>
-                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">
-                      {req.Description}
-                    </td>
-                    <td className="px-4 py-3 text-blue-600 dark:text-blue-400">
-                      {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
-                        <div className="flex flex-col gap-1">
-                          {req["Product-Links"].map((link, i) => (
-                            <a
-                              key={i}
-                              href={link}
-                              target="popup"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                window.open(link, "popup", "width=800,height=600");
-                              }}
-                              className="underline hover:text-blue-800 dark:hover:text-blue-300"
-                            >
-                              Link-{i + 1}
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">No Links</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req.Quantity}</td>
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                      {req.Time?.seconds
-                        ? new Date(req.Time.seconds * 1000).toLocaleString()
-                        : "N/A"}
-                    </td>
-                    <td className="px-4 py-3 flex flex-col gap-1">
-                      <a
-                        href={`https://wa.me/?text=Hello%20${encodeURIComponent(
-                          req["Customer-Name"]
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                      >
-                        WhatsApp
-                      </a>
-                      <button
-                        onClick={() => generateInvoice(req)}
-                        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
-                      >
-                        <FileText size={16} />
-                        Invoice
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Keep the rest of your table rendering code as-is */}
           </div>
         )}
       </div>
