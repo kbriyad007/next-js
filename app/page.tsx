@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-
-import { Slider } from "@/components/ui/slider";
-import { format } from "date-fns";
-import { ArrowDown, ArrowUp } from "lucide-react";
-
-import Datepicker from "react-tailwindcss-datepicker";
+import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -30,9 +25,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [quantityFilter, setQuantityFilter] = useState<number>(0);
-  const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
+  const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,27 +47,94 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const handleSort = (key: keyof RequestData) => {
+    setSortOrder(sortBy === key && sortOrder === "asc" ? "desc" : "asc");
+    setSortBy(key);
+  };
+
+  const generateInvoice = (req: RequestData) => {
+    const invoiceWindow = window.open("", "Invoice", "width=800,height=600");
+
+    const htmlContent = 
+      <html>
+        <head>
+          <title>Invoice - ${req["Customer-Name"]}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { color: #333; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #f9f9f9; }
+            a { color: #007bff; text-decoration: none; }
+          </style>
+        </head>
+        <body>
+          <h1>Invoice</h1>
+          <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
+          <p><strong>Email:</strong> ${req["User-Email"]}</p>
+          <p><strong>Address:</strong> ${req.Address}</p>
+          <p><strong>Date:</strong> ${req.Time?.seconds ? new Date(req.Time.seconds * 1000).toLocaleString() : "N/A"}</p>
+
+          <table>
+            <tr>
+              <th>Description</th>
+              <th>Quantity</th>
+            </tr>
+            <tr>
+              <td>${req.Description}</td>
+              <td>${req.Quantity}</td>
+            </tr>
+          </table>
+
+          ${
+            req["Product-Links"] && req["Product-Links"].length > 0
+              ? <p><strong>Product Links:</strong><br>${req["Product-Links"]
+                  .map(
+                    (link, i) => <a href="${link}" target="_blank">Link-${i + 1}</a><br>
+                  )
+                  .join("")}</p>
+              : ""
+          }
+
+          <p style="margin-top: 30px;">Thank you for your request!</p>
+          <script>window.print();</script>
+        </body>
+      </html>
+    ;
+
+    invoiceWindow?.document.write(htmlContent);
+    invoiceWindow?.document.close();
+  };
+
   const filteredRequests = requests.filter((req) => {
     const query = search.toLowerCase();
-    const matchesSearch =
+    return (
       req["Customer-Name"]?.toLowerCase().includes(query) ||
       req["User-Email"]?.toLowerCase().includes(query) ||
-      req.Address?.toLowerCase().includes(query);
-
-    const matchesQuantity = req.Quantity >= quantityFilter;
-
-    const requestDate = req.Time?.seconds
-      ? new Date(req.Time.seconds * 1000)
-      : null;
-
-    const matchesDate =
-      !dateRange.startDate ||
-      !requestDate ||
-      (requestDate >= new Date(dateRange.startDate) &&
-        requestDate <= new Date(dateRange.endDate));
-
-    return matchesSearch && matchesQuantity && matchesDate;
+      req.Address?.toLowerCase().includes(query)
+    );
   });
+
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    if (!sortBy) return 0;
+    const valA = a[sortBy];
+    const valB = b[sortBy];
+    if (typeof valA === "string" && typeof valB === "string") {
+      return sortOrder === "asc"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    }
+    return 0;
+  });
+
+  const renderSortIcon = (key: keyof RequestData) =>
+    sortBy === key ? (
+      sortOrder === "asc" ? (
+        <ArrowUp size={14} className="inline ml-1" />
+      ) : (
+        <ArrowDown size={14} className="inline ml-1" />
+      )
+    ) : null;
 
   return (
     <Layout>
@@ -89,37 +150,6 @@ export default function Home() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-1/2">
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-              Date Range
-            </label>
-            <Datepicker
-              value={dateRange}
-              onChange={setDateRange}
-              showShortcuts={true}
-              primaryColor="blue"
-              useRange={false}
-              displayFormat="DD/MM/YYYY"
-              containerClassName="relative"
-              inputClassName="w-full rounded-xl border border-gray-300 dark:border-gray-600 px-4 py-2 dark:bg-gray-800 dark:text-white"
-            />
-          </div>
-
-          <div className="w-full md:w-1/2">
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-              Minimum Quantity: {quantityFilter}
-            </label>
-            <Slider
-              defaultValue={[0]}
-              max={100}
-              step={1}
-              value={[quantityFilter]}
-              onValueChange={(val) => setQuantityFilter(val[0])}
-            />
-          </div>
-        </div>
 
         {loading ? (
           <p className="text-gray-500 dark:text-gray-400">Loading requests...</p>
@@ -138,20 +168,25 @@ export default function Home() {
                     "Product-Links",
                     "Quantity",
                     "Time",
+                    "Message",
                   ].map((key) => (
                     <th
                       key={key}
-                      className={`px-4 py-3 text-left font-semibold uppercase ${
+                      className={px-4 py-3 text-left font-semibold uppercase ${
                         key === "Address" || key === "Description" ? "w-64" : ""
-                      }`}
+                      } ${key !== "Message" ? "cursor-pointer" : ""}}
+                      onClick={() =>
+                        key !== "Message" && handleSort(key as keyof RequestData)
+                      }
                     >
                       {key.replace(/-/g, " ")}
+                      {renderSortIcon(key as keyof RequestData)}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filteredRequests.map((req) => (
+                {sortedRequests.map((req) => (
                   <tr
                     key={req.id}
                     className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
@@ -195,6 +230,25 @@ export default function Home() {
                       {req.Time?.seconds
                         ? new Date(req.Time.seconds * 1000).toLocaleString()
                         : "N/A"}
+                    </td>
+                    <td className="px-4 py-3 flex flex-col gap-1">
+                      <a
+                        href={https://wa.me/?text=Hello%20${encodeURIComponent(
+                          req["Customer-Name"]
+                        )}}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                      >
+                        WhatsApp
+                      </a>
+                      <button
+                        onClick={() => generateInvoice(req)}
+                        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
+                      >
+                        <FileText size={16} />
+                        Invoice
+                      </button>
                     </td>
                   </tr>
                 ))}
