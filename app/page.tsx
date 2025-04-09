@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -244,8 +244,9 @@ export default function Home() {
                       </a>
                       <button
                         onClick={() => generateInvoice(req)}
-                        className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 underline"
+                        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
                       >
+                        <FileText size={16} />
                         Invoice
                       </button>
                     </td>
