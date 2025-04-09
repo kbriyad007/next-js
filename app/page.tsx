@@ -55,7 +55,7 @@ export default function Home() {
   const generateInvoice = (req: RequestData) => {
     const invoiceWindow = window.open("", "Invoice", "width=800,height=600");
 
-    const htmlContent = 
+    const htmlContent = `
       <html>
         <head>
           <title>Invoice - ${req["Customer-Name"]}</title>
@@ -73,7 +73,11 @@ export default function Home() {
           <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
           <p><strong>Email:</strong> ${req["User-Email"]}</p>
           <p><strong>Address:</strong> ${req.Address}</p>
-          <p><strong>Date:</strong> ${req.Time?.seconds ? new Date(req.Time.seconds * 1000).toLocaleString() : "N/A"}</p>
+          <p><strong>Date:</strong> ${
+            req.Time?.seconds
+              ? new Date(req.Time.seconds * 1000).toLocaleString()
+              : "N/A"
+          }</p>
 
           <table>
             <tr>
@@ -88,11 +92,12 @@ export default function Home() {
 
           ${
             req["Product-Links"] && req["Product-Links"].length > 0
-              ? <p><strong>Product Links:</strong><br>${req["Product-Links"]
+              ? `<p><strong>Product Links:</strong><br>${req["Product-Links"]
                   .map(
-                    (link, i) => <a href="${link}" target="_blank">Link-${i + 1}</a><br>
+                    (link, i) =>
+                      `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
                   )
-                  .join("")}</p>
+                  .join("")}</p>`
               : ""
           }
 
@@ -100,7 +105,7 @@ export default function Home() {
           <script>window.print();</script>
         </body>
       </html>
-    ;
+    `;
 
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
@@ -172,9 +177,9 @@ export default function Home() {
                   ].map((key) => (
                     <th
                       key={key}
-                      className={px-4 py-3 text-left font-semibold uppercase ${
+                      className={`px-4 py-3 text-left font-semibold uppercase ${
                         key === "Address" || key === "Description" ? "w-64" : ""
-                      } ${key !== "Message" ? "cursor-pointer" : ""}}
+                      } ${key !== "Message" ? "cursor-pointer" : ""}`}
                       onClick={() =>
                         key !== "Message" && handleSort(key as keyof RequestData)
                       }
@@ -233,9 +238,9 @@ export default function Home() {
                     </td>
                     <td className="px-4 py-3 flex flex-col gap-1">
                       <a
-                        href={https://wa.me/?text=Hello%20${encodeURIComponent(
+                        href={`https://wa.me/?text=Hello%20${encodeURIComponent(
                           req["Customer-Name"]
-                        )}}
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
@@ -260,3 +265,4 @@ export default function Home() {
     </Layout>
   );
 }
+
