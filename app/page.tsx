@@ -164,7 +164,7 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
-          <div className="overflow-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="w-screen px-6 overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
                 <tr>
