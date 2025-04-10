@@ -30,6 +30,28 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
 
+  const minimalColumns = [
+    "Customer-Name",
+    "User-Email",
+    "Phone-Number",
+    "Product-Links",
+    "Quantity",
+    "Time",
+    "Message",
+  ];
+
+  const allColumns = [
+    "Customer-Name",
+    "User-Email",
+    "Phone-Number",
+    "Address",
+    "Description",
+    "Product-Links",
+    "Quantity",
+    "Time",
+    "Message",
+  ];
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,7 +103,6 @@ export default function Home() {
               ? new Date(req.Time.seconds * 1000).toLocaleString()
               : "N/A"
           }</p>
-
           <table>
             <tr>
               <th>Description</th>
@@ -92,9 +113,8 @@ export default function Home() {
               <td>${req.Quantity}</td>
             </tr>
           </table>
-
           ${
-            req["Product-Links"] && req["Product-Links"].length > 0
+            req["Product-Links"]?.length
               ? `<p><strong>Product Links:</strong><br>${req["Product-Links"]
                   .map(
                     (link, i) =>
@@ -103,7 +123,6 @@ export default function Home() {
                   .join("")}</p>`
               : ""
           }
-
           <p style="margin-top: 30px;">Thank you for your request!</p>
           <script>window.print();</script>
         </body>
@@ -112,6 +131,11 @@ export default function Home() {
 
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
+  };
+
+  const getValue = (req: RequestData, key: string): string => {
+    const value = (req as Record<string, unknown>)[key];
+    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -145,42 +169,20 @@ export default function Home() {
       )
     ) : null;
 
-  const allColumns = [
-    "Customer-Name",
-    "User-Email",
-    "Phone-Number",
-    "Address",
-    "Description",
-    "Product-Links",
-    "Quantity",
-    "Time",
-    "Message",
-  ];
-
-  const minimalColumns = [
-    "Customer-Name",
-    "User-Email",
-    "Phone-Number",
-    "Product-Links",
-    "Quantity",
-    "Time",
-    "Message",
-  ];
-
-  const visibleColumns = showMinimal ? minimalColumns : allColumns;
+  const columns = showMinimal ? minimalColumns : allColumns;
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
             User Requests
           </h1>
           <button
-            onClick={() => setShowMinimal(!showMinimal)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+            onClick={() => setShowMinimal((prev) => !prev)}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
           >
-            {showMinimal ? "Show All Columns" : "Show Few Columns"}
+            Toggle Columns
           </button>
         </div>
 
@@ -197,11 +199,11 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
-          <div className="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-              <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
+              <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
                 <tr>
-                  {visibleColumns.map((key) => (
+                  {columns.map((key) => (
                     <th
                       key={key}
                       className={`px-4 py-3 text-left font-semibold uppercase ${
@@ -223,11 +225,12 @@ export default function Home() {
                     key={req.id}
                     className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
                   >
-                    {visibleColumns.map((key) => (
-                      <td key={key} className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                        {key === "Product-Links" ? (
-                          Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
-                            <div className="flex flex-col gap-1 text-blue-600 dark:text-blue-400">
+                    {columns.map((key) =>
+                      key === "Product-Links" ? (
+                        <td key={key} className="px-4 py-3 text-blue-600 dark:text-blue-400">
+                          {Array.isArray(req["Product-Links"]) &&
+                          req["Product-Links"].length > 0 ? (
+                            <div className="flex flex-col gap-1">
                               {req["Product-Links"].map((link, i) => (
                                 <a
                                   key={i}
@@ -245,36 +248,40 @@ export default function Home() {
                             </div>
                           ) : (
                             <span className="text-gray-400 dark:text-gray-500">No Links</span>
-                          )
-                        ) : key === "Time" ? (
-                          req.Time?.seconds
+                          )}
+                        </td>
+                      ) : key === "Time" ? (
+                        <td key={key} className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                          {req.Time?.seconds
                             ? new Date(req.Time.seconds * 1000).toLocaleString()
-                            : "N/A"
-                        ) : key === "Message" ? (
-                          <div className="flex flex-col gap-1">
-                            <a
-                              href={`https://wa.me/?text=Hello%20${encodeURIComponent(
-                                req["Customer-Name"]
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                            >
-                              WhatsApp
-                            </a>
-                            <button
-                              onClick={() => generateInvoice(req)}
-                              className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
-                            >
-                              <FileText size={16} />
-                              Invoice
-                            </button>
-                          </div>
-                        ) : (
-                          (req as Record<string, any>)[key] || "N/A"
-                        )}
-                      </td>
-                    ))}
+                            : "N/A"}
+                        </td>
+                      ) : key === "Message" ? (
+                        <td key={key} className="px-4 py-3 flex flex-col gap-1">
+                          <a
+                            href={`https://wa.me/?text=Hello%20${encodeURIComponent(
+                              req["Customer-Name"]
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                          >
+                            WhatsApp
+                          </a>
+                          <button
+                            onClick={() => generateInvoice(req)}
+                            className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
+                          >
+                            <FileText size={16} />
+                            Invoice
+                          </button>
+                        </td>
+                      ) : (
+                        <td key={key} className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                          {getValue(req, key)}
+                        </td>
+                      )
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -285,4 +292,3 @@ export default function Home() {
     </Layout>
   );
 }
-
