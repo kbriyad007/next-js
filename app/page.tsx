@@ -80,14 +80,86 @@ export default function Home() {
     const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
 
     const productLinksHTML = req["Product-Links"]?.map(
-      (link, i) => `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
+      (link, i) =>
+        `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
     ).join("") || "N/A";
 
     const formattedDate = req.Time?.seconds
       ? new Date(req.Time.seconds * 1000).toLocaleString()
       : "N/A";
 
-    const htmlContent = `...`; // Kept same from previous code to keep it concise
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Invoice - ${req["Customer-Name"]}</title>
+          <style>
+            body {
+              font-family: 'Inter', sans-serif;
+              background: #f8fafc;
+              color: #1f2937;
+              padding: 40px;
+              line-height: 1.6;
+            }
+            .container {
+              background: #ffffff;
+              padding: 30px;
+              border-radius: 12px;
+              max-width: 700px;
+              margin: auto;
+              box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            }
+            h1 {
+              font-size: 24px;
+              color: #2563eb;
+              margin-bottom: 24px;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .section h2 {
+              font-size: 16px;
+              color: #111827;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #e5e7eb;
+              padding-bottom: 4px;
+            }
+            a {
+              color: #2563eb;
+              text-decoration: none;
+            }
+            .footer {
+              margin-top: 40px;
+              font-size: 12px;
+              text-align: center;
+              color: #6b7280;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Invoice</h1>
+            <div class="section">
+              <h2>Customer Info</h2>
+              <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
+              <p><strong>Email:</strong> ${req["User-Email"]}</p>
+              <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
+              <p><strong>Address:</strong> ${req.Address}</p>
+              <p><strong>Date:</strong> ${formattedDate}</p>
+            </div>
+            <div class="section">
+              <h2>Order Details</h2>
+              <p><strong>Description:</strong> ${req.Description}</p>
+              <p><strong>Quantity:</strong> ${req.Quantity}</p>
+              <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
+            </div>
+            <div class="footer">
+              <p>This is an auto-generated invoice. No signature required.</p>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
 
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
@@ -159,14 +231,14 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl">
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
                 <tr>
                   {columns.map((key) => (
                     <th
                       key={key}
-                      className={`px-4 py-3 text-left font-semibold uppercase tracking-wide ${
+                      className={`px-4 py-3 text-left font-semibold uppercase ${
                         key === "Address" || key === "Description" ? "w-64" : ""
                       } ${key !== "Message" ? "cursor-pointer" : ""}`}
                       onClick={() =>
@@ -183,12 +255,13 @@ export default function Home() {
                 {sortedRequests.map((req) => (
                   <tr
                     key={req.id}
-                    className="even:bg-gray-50 hover:bg-blue-50 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
+                    className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
                   >
                     {columns.map((key) =>
                       key === "Product-Links" ? (
                         <td key={key} className="px-4 py-3 text-blue-600 dark:text-blue-400">
-                          {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
+                          {Array.isArray(req["Product-Links"]) &&
+                          req["Product-Links"].length > 0 ? (
                             <div className="flex flex-col gap-1">
                               {req["Product-Links"].map((link, i) => (
                                 <a
@@ -216,9 +289,12 @@ export default function Home() {
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-4 py-3 flex flex-col gap-2">
+                        <td key={key} className="px-4 py-3 flex flex-col gap-1">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(
+                              /[^0-9]/g,
+                              ""
+                            )}?text=${encodeURIComponent(
                               `Hello ${req["Customer-Name"]}, I received your request.`
                             )}`}
                             target="_blank"
