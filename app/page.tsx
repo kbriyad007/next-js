@@ -165,101 +165,104 @@ export default function Home() {
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
           <div className="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
-            <table className="table-fixed w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-              <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
-                <tr>
-                  {[
-                    "Customer-Name",
-                    "User-Email",
-                    "Phone-Number",
-                    "Address",
-                    "Description",
-                    "Product-Links",
-                    "Quantity",
-                    "Time",
-                    "Message",
-                  ].map((key) => (
-                    <th
-                      key={key}
-                      className={`px-2 py-2 text-left font-semibold uppercase text-xs break-words ${
-                        key === "Address" || key === "Description" ? "w-48" : "w-32"
-                      } ${key !== "Message" ? "cursor-pointer" : ""}`}
-                      onClick={() =>
-                        key !== "Message" && handleSort(key as keyof RequestData)
-                      }
-                    >
-                      {key.replace(/-/g, " ")}
-                      {renderSortIcon(key as keyof RequestData)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {sortedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
-                  >
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200 break-words">{req["Customer-Name"]}</td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200 break-words">{req["User-Email"]}</td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200 break-words">{req["Phone-Number"] || "N/A"}</td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200 break-words w-48">{req.Address}</td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200 break-words w-48">{req.Description}</td>
-                    <td className="px-2 py-2 text-blue-600 dark:text-blue-400">
-                      {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
-                        <div className="flex flex-col gap-1">
-                          {req["Product-Links"].map((link, i) => (
-                            <a
-                              key={i}
-                              href={link}
-                              target="popup"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                window.open(link, "popup", "width=800,height=600");
-                              }}
-                              className="underline hover:text-blue-800 dark:hover:text-blue-300"
-                            >
-                              Link-{i + 1}
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">No Links</span>
-                      )}
-                    </td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200">{req.Quantity}</td>
-                    <td className="px-2 py-2 text-gray-800 dark:text-gray-200">
-                      {req.Time?.seconds
-                        ? new Date(req.Time.seconds * 1000).toLocaleString()
-                        : "N/A"}
-                    </td>
-                    <td className="px-2 py-2 flex flex-col gap-1">
-                      <a
-                        href={`https://wa.me/?text=Hello%20${encodeURIComponent(
-                          req["Customer-Name"]
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm"
+            <div className="min-w-[1300px]">
+              <table className="table-auto w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
+                  <tr>
+                    {[
+                      "Customer-Name",
+                      "User-Email",
+                      "Phone-Number",
+                      "Address",
+                      "Description",
+                      "Product-Links",
+                      "Quantity",
+                      "Time",
+                      "Message",
+                    ].map((key) => (
+                      <th
+                        key={key}
+                        className={`px-4 py-3 text-left font-semibold uppercase ${
+                          key === "Address" || key === "Description" ? "w-64" : ""
+                        } ${key !== "Message" ? "cursor-pointer" : ""}`}
+                        onClick={() =>
+                          key !== "Message" && handleSort(key as keyof RequestData)
+                        }
                       >
-                        WhatsApp
-                      </a>
-                      <button
-                        onClick={() => generateInvoice(req)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
-                      >
-                        <FileText size={14} />
-                        Invoice
-                      </button>
-                    </td>
+                        {key.replace(/-/g, " ")}
+                        {renderSortIcon(key as keyof RequestData)}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {sortedRequests.map((req) => (
+                    <tr
+                      key={req.id}
+                      className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
+                    >
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Customer-Name"]}</td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["User-Email"]}</td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Phone-Number"] || "N/A"}</td>
+                      <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Address}</td>
+                      <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Description}</td>
+                      <td className="px-4 py-3 text-blue-600 dark:text-blue-400">
+                        {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {req["Product-Links"].map((link, i) => (
+                              <a
+                                key={i}
+                                href={link}
+                                target="popup"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  window.open(link, "popup", "width=800,height=600");
+                                }}
+                                className="underline hover:text-blue-800 dark:hover:text-blue-300"
+                              >
+                                Link-{i + 1}
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">No Links</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req.Quantity}</td>
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                        {req.Time?.seconds
+                          ? new Date(req.Time.seconds * 1000).toLocaleString()
+                          : "N/A"}
+                      </td>
+                      <td className="px-4 py-3 flex flex-col gap-1">
+                        <a
+                          href={`https://wa.me/?text=Hello%20${encodeURIComponent(
+                            req["Customer-Name"]
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                        >
+                          WhatsApp
+                        </a>
+                        <button
+                          onClick={() => generateInvoice(req)}
+                          className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
+                        >
+                          <FileText size={16} />
+                          Invoice
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
     </Layout>
   );
 }
+
 
