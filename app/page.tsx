@@ -165,7 +165,7 @@ export default function Home() {
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
           <div className="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
-            <div className="min-w-[1400px]">
+            <div className="min-w-[1300px]">
               <table className="table-auto w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
                   <tr>
@@ -264,5 +264,3 @@ export default function Home() {
     </Layout>
   );
 }
-
-
