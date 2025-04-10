@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText, Eye, EyeOff } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -28,7 +28,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [showMinimalView, setShowMinimalView] = useState(false);
+  const [showMinimal, setShowMinimal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,41 +145,42 @@ export default function Home() {
       )
     ) : null;
 
-  const columns = showMinimalView
-    ? [
-        "Customer-Name",
-        "User-Email",
-        "Phone-Number",
-        "Product-Links",
-        "Quantity",
-        "Time",
-        "Message",
-      ]
-    : [
-        "Customer-Name",
-        "User-Email",
-        "Phone-Number",
-        "Address",
-        "Description",
-        "Product-Links",
-        "Quantity",
-        "Time",
-        "Message",
-      ];
+  const allColumns = [
+    "Customer-Name",
+    "User-Email",
+    "Phone-Number",
+    "Address",
+    "Description",
+    "Product-Links",
+    "Quantity",
+    "Time",
+    "Message",
+  ];
+
+  const minimalColumns = [
+    "Customer-Name",
+    "User-Email",
+    "Phone-Number",
+    "Product-Links",
+    "Quantity",
+    "Time",
+    "Message",
+  ];
+
+  const visibleColumns = showMinimal ? minimalColumns : allColumns;
 
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
             User Requests
           </h1>
           <button
-            onClick={() => setShowMinimalView(!showMinimalView)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full shadow bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => setShowMinimal(!showMinimal)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
           >
-            {showMinimalView ? <EyeOff size={18} /> : <Eye size={18} />}
-            {showMinimalView ? "Show All Columns" : "Show Fewer Columns"}
+            {showMinimal ? "Show All Columns" : "Show Few Columns"}
           </button>
         </div>
 
@@ -196,17 +197,15 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-              <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
+              <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
                 <tr>
-                  {columns.map((key) => (
+                  {visibleColumns.map((key) => (
                     <th
                       key={key}
                       className={`px-4 py-3 text-left font-semibold uppercase ${
-                        key === "Address" || key === "Description"
-                          ? "w-64"
-                          : ""
+                        key === "Address" || key === "Description" ? "w-64" : ""
                       } ${key !== "Message" ? "cursor-pointer" : ""}`}
                       onClick={() =>
                         key !== "Message" && handleSort(key as keyof RequestData)
@@ -224,12 +223,11 @@ export default function Home() {
                     key={req.id}
                     className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
                   >
-                    {columns.map((key) => (
+                    {visibleColumns.map((key) => (
                       <td key={key} className="px-4 py-3 text-gray-800 dark:text-gray-200">
                         {key === "Product-Links" ? (
-                          Array.isArray(req["Product-Links"]) &&
-                          req["Product-Links"].length > 0 ? (
-                            <div className="flex flex-col gap-1">
+                          Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
+                            <div className="flex flex-col gap-1 text-blue-600 dark:text-blue-400">
                               {req["Product-Links"].map((link, i) => (
                                 <a
                                   key={i}
@@ -239,16 +237,14 @@ export default function Home() {
                                     e.preventDefault();
                                     window.open(link, "popup", "width=800,height=600");
                                   }}
-                                  className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                  className="underline hover:text-blue-800 dark:hover:text-blue-300"
                                 >
                                   Link-{i + 1}
                                 </a>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-gray-400 dark:text-gray-500">
-                              No Links
-                            </span>
+                            <span className="text-gray-400 dark:text-gray-500">No Links</span>
                           )
                         ) : key === "Time" ? (
                           req.Time?.seconds
@@ -275,7 +271,7 @@ export default function Home() {
                             </button>
                           </div>
                         ) : (
-                          (req as any)[key] || "N/A"
+                          (req as Record<string, any>)[key] || "N/A"
                         )}
                       </td>
                     ))}
@@ -289,3 +285,4 @@ export default function Home() {
     </Layout>
   );
 }
+
