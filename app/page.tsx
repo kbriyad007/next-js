@@ -76,33 +76,88 @@ export default function Home() {
     setSortBy(key);
   };
 
-  const generateInvoice = (req: RequestData) => {
-    const invoiceWindow = window.open("", "Invoice", "width=800,height=600");
+const generateInvoice = (req: RequestData) => {
+  const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
 
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            th { background: #f9f9f9; }
-            a { color: #007bff; text-decoration: none; }
-          </style>
-        </head>
-        <body>
-          <h1>Invoice</h1>
-          <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
-          <p><strong>Email:</strong> ${req["User-Email"]}</p>
-          <p><strong>Phone Number:</strong> ${req["Phone-Number"] || "N/A"}</p>
-          <p><strong>Address:</strong> ${req.Address}</p>
-          <p><strong>Date:</strong> ${
-            req.Time?.seconds
-              ? new Date(req.Time.seconds * 1000).toLocaleString()
-              : "N/A"
-          }</p>
+  const productLinksHTML = req["Product-Links"]?.map(
+    (link, i) =>
+      `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
+  ).join("") || "N/A";
+
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Invoice - ${req["Customer-Name"]}</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px;
+            background-color: #f5f5f5;
+            color: #333;
+          }
+          .invoice-box {
+            background: white;
+            padding: 40px;
+            max-width: 800px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 32px;
+            color: #4a4a4a;
+          }
+          .details, .footer {
+            margin-top: 30px;
+            font-size: 14px;
+          }
+          .details p, .footer p {
+            margin: 4px 0;
+          }
+          table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+          }
+          th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+          }
+          a {
+            color: #0066cc;
+            text-decoration: none;
+          }
+          .print-button {
+            display: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-box">
+          <div class="header">
+            <h1>Customer Invoice</h1>
+          </div>
+          <div class="details">
+            <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
+            <p><strong>Email:</strong> ${req["User-Email"]}</p>
+            <p><strong>Phone Number:</strong> ${req["Phone-Number"] || "N/A"}</p>
+            <p><strong>Address:</strong> ${req.Address}</p>
+            <p><strong>Date:</strong> ${
+              req.Time?.seconds
+                ? new Date(req.Time.seconds * 1000).toLocaleString()
+                : "N/A"
+            }</p>
+          </div>
           <table>
             <tr>
               <th>Description</th>
@@ -113,25 +168,22 @@ export default function Home() {
               <td>${req.Quantity}</td>
             </tr>
           </table>
-          ${
-            req["Product-Links"]?.length
-              ? `<p><strong>Product Links:</strong><br>${req["Product-Links"]
-                  .map(
-                    (link, i) =>
-                      `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
-                  )
-                  .join("")}</p>`
-              : ""
-          }
-          <p style="margin-top: 30px;">Thank you for your request!</p>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
+          <div class="details">
+            <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
+          </div>
+          <div class="footer">
+            <p>Thank you for your request!</p>
+            <p>This is a system-generated invoice.</p>
+          </div>
+        </div>
+        <script>window.print();</script>
+      </body>
+    </html>
+  `;
 
-    invoiceWindow?.document.write(htmlContent);
-    invoiceWindow?.document.close();
-  };
+  invoiceWindow?.document.write(htmlContent);
+  invoiceWindow?.document.close();
+};
 
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
