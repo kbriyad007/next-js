@@ -81,8 +81,12 @@ const generateInvoice = (req: RequestData) => {
 
   const productLinksHTML = req["Product-Links"]?.map(
     (link, i) =>
-      `<a href="${link}" target="_blank">Link-${i + 1}</a><br>`
+      `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
   ).join("") || "N/A";
+
+  const formattedDate = req.Time?.seconds
+    ? new Date(req.Time.seconds * 1000).toLocaleString()
+    : "N/A";
 
   const htmlContent = `
     <html>
@@ -90,90 +94,127 @@ const generateInvoice = (req: RequestData) => {
         <title>Invoice - ${req["Customer-Name"]}</title>
         <style>
           body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 40px;
-            background-color: #f5f5f5;
-            color: #333;
-          }
-          .invoice-box {
-            background: white;
-            padding: 40px;
-            max-width: 800px;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .header h1 {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
             margin: 0;
-            font-size: 32px;
-            color: #4a4a4a;
+            padding: 0;
+            background: #f0f2f5;
+            color: #1f2937;
           }
-          .details, .footer {
-            margin-top: 30px;
+          .invoice-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            padding: 40px;
+          }
+          .brand {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+          }
+          .brand h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 0;
+          }
+          .brand .date {
             font-size: 14px;
+            color: #6b7280;
           }
-          .details p, .footer p {
+          .section {
+            margin-bottom: 24px;
+          }
+          .section h2 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 4px;
+          }
+          .section p {
             margin: 4px 0;
+            font-size: 14px;
           }
           table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
           }
           th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
           }
           th {
-            background-color: #f0f0f0;
-            font-weight: bold;
+            background-color: #f9fafb;
+            text-align: left;
+            color: #374151;
           }
-          a {
-            color: #0066cc;
+          td {
+            color: #1f2937;
+          }
+          .product-links {
+            margin-top: 12px;
+          }
+          .product-links a {
+            color: #2563eb;
             text-decoration: none;
           }
-          .print-button {
-            display: none;
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+          }
+          @media print {
+            .invoice-container {
+              box-shadow: none;
+              margin: 0;
+              border-radius: 0;
+              padding: 20px;
+            }
           }
         </style>
       </head>
       <body>
-        <div class="invoice-box">
-          <div class="header">
-            <h1>Customer Invoice</h1>
+        <div class="invoice-container">
+          <div class="brand">
+            <h1>MyCompany Invoice</h1>
+            <div class="date">${formattedDate}</div>
           </div>
-          <div class="details">
-            <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
+
+          <div class="section">
+            <h2>Customer Details</h2>
+            <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
             <p><strong>Email:</strong> ${req["User-Email"]}</p>
-            <p><strong>Phone Number:</strong> ${req["Phone-Number"] || "N/A"}</p>
+            <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
             <p><strong>Address:</strong> ${req.Address}</p>
-            <p><strong>Date:</strong> ${
-              req.Time?.seconds
-                ? new Date(req.Time.seconds * 1000).toLocaleString()
-                : "N/A"
-            }</p>
           </div>
-          <table>
-            <tr>
-              <th>Description</th>
-              <th>Quantity</th>
-            </tr>
-            <tr>
-              <td>${req.Description}</td>
-              <td>${req.Quantity}</td>
-            </tr>
-          </table>
-          <div class="details">
-            <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
+
+          <div class="section">
+            <h2>Order Summary</h2>
+            <table>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+              </tr>
+              <tr>
+                <td>${req.Description}</td>
+                <td>${req.Quantity}</td>
+              </tr>
+            </table>
+
+            <div class="product-links">
+              <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
+            </div>
           </div>
+
           <div class="footer">
-            <p>Thank you for your request!</p>
-            <p>This is a system-generated invoice.</p>
+            <p>Thank you for your request.</p>
+            <p>This invoice was generated electronically and is valid without a signature.</p>
           </div>
         </div>
         <script>window.print();</script>
