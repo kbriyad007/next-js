@@ -179,10 +179,10 @@ export default function Home() {
             User Requests
           </h1>
           <button
-             onClick={() => setShowMinimal((prev) => !prev)}
-  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
->
-  {showMinimal ? "Full View" : "Minimal View"}
+            onClick={() => setShowMinimal((prev) => !prev)}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
+          >
+            {showMinimal ? "Full View" : "Minimal View"}
           </button>
         </div>
 
@@ -259,8 +259,11 @@ export default function Home() {
                       ) : key === "Message" ? (
                         <td key={key} className="px-4 py-3 flex flex-col gap-1">
                           <a
-                            href={`https://wa.me/?text=Hello%20${encodeURIComponent(
-                              req["Customer-Name"]
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(
+                              /[^0-9]/g,
+                              ""
+                            )}?text=${encodeURIComponent(
+                              `Hello ${req["Customer-Name"]}, I received your request.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -292,3 +295,4 @@ export default function Home() {
     </Layout>
   );
 }
+
