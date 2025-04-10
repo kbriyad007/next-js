@@ -76,94 +76,155 @@ export default function Home() {
     setSortBy(key);
   };
 
-  const generateInvoice = (req: RequestData) => {
-    const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
+const generateInvoice = (req: RequestData) => {
+  const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
 
-    const productLinksHTML = req["Product-Links"]?.map(
-      (link, i) =>
-        `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
-    ).join("") || "N/A";
+  const productLinksHTML = req["Product-Links"]?.map(
+    (link, i) =>
+      `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
+  ).join("") || "N/A";
 
-    const formattedDate = req.Time?.seconds
-      ? new Date(req.Time.seconds * 1000).toLocaleString()
-      : "N/A";
+  const formattedDate = req.Time?.seconds
+    ? new Date(req.Time.seconds * 1000).toLocaleString()
+    : "N/A";
 
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body {
-              font-family: 'Inter', sans-serif;
-              background: #f8fafc;
-              color: #1f2937;
-              padding: 40px;
-              line-height: 1.6;
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Invoice - ${req["Customer-Name"]}</title>
+        <style>
+          body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #1f2937;
+          }
+          .invoice-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            padding: 40px;
+          }
+          .brand {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+          }
+          .brand h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+            margin: 0;
+          }
+          .brand .date {
+            font-size: 14px;
+            color: #6b7280;
+          }
+          .section {
+            margin-bottom: 24px;
+          }
+          .section h2 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 4px;
+          }
+          .section p {
+            margin: 4px 0;
+            font-size: 14px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 14px;
+          }
+          th, td {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+          }
+          th {
+            background-color: #f9fafb;
+            text-align: left;
+            color: #374151;
+          }
+          td {
+            color: #1f2937;
+          }
+          .product-links {
+            margin-top: 12px;
+          }
+          .product-links a {
+            color: #2563eb;
+            text-decoration: none;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+          }
+          @media print {
+            .invoice-container {
+              box-shadow: none;
+              margin: 0;
+              border-radius: 0;
+              padding: 20px;
             }
-            .container {
-              background: #ffffff;
-              padding: 30px;
-              border-radius: 12px;
-              max-width: 700px;
-              margin: auto;
-              box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-            }
-            h1 {
-              font-size: 24px;
-              color: #2563eb;
-              margin-bottom: 24px;
-            }
-            .section {
-              margin-bottom: 20px;
-            }
-            .section h2 {
-              font-size: 16px;
-              color: #111827;
-              margin-bottom: 8px;
-              border-bottom: 1px solid #e5e7eb;
-              padding-bottom: 4px;
-            }
-            a {
-              color: #2563eb;
-              text-decoration: none;
-            }
-            .footer {
-              margin-top: 40px;
-              font-size: 12px;
-              text-align: center;
-              color: #6b7280;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Invoice</h1>
-            <div class="section">
-              <h2>Customer Info</h2>
-              <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
-              <p><strong>Email:</strong> ${req["User-Email"]}</p>
-              <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
-              <p><strong>Address:</strong> ${req.Address}</p>
-              <p><strong>Date:</strong> ${formattedDate}</p>
-            </div>
-            <div class="section">
-              <h2>Order Details</h2>
-              <p><strong>Description:</strong> ${req.Description}</p>
-              <p><strong>Quantity:</strong> ${req.Quantity}</p>
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="brand">
+            <h1>MyCompany Invoice</h1>
+            <div class="date">${formattedDate}</div>
+          </div>
+
+          <div class="section">
+            <h2>Customer Details</h2>
+            <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
+            <p><strong>Email:</strong> ${req["User-Email"]}</p>
+            <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
+            <p><strong>Address:</strong> ${req.Address}</p>
+          </div>
+
+          <div class="section">
+            <h2>Order Summary</h2>
+            <table>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+              </tr>
+              <tr>
+                <td>${req.Description}</td>
+                <td>${req.Quantity}</td>
+              </tr>
+            </table>
+
+            <div class="product-links">
               <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
             </div>
-            <div class="footer">
-              <p>This is an auto-generated invoice. No signature required.</p>
-            </div>
           </div>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
 
-    invoiceWindow?.document.write(htmlContent);
-    invoiceWindow?.document.close();
-  };
+          <div class="footer">
+            <p>Thank you for your request.</p>
+            <p>This invoice was generated electronically and is valid without a signature.</p>
+          </div>
+        </div>
+        <script>window.print();</script>
+      </body>
+    </html>
+  `;
+
+  invoiceWindow?.document.write(htmlContent);
+  invoiceWindow?.document.close();
+};
 
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
@@ -327,3 +388,5 @@ export default function Home() {
     </Layout>
   );
 }
+
+
