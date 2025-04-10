@@ -10,6 +10,7 @@ type RequestData = {
   id: string;
   "Customer-Name": string;
   "User-Email": string;
+  "Phone-Number"?: string;
   Address: string;
   Description: string;
   Quantity: number;
@@ -72,6 +73,7 @@ export default function Home() {
           <h1>Invoice</h1>
           <p><strong>Customer Name:</strong> ${req["Customer-Name"]}</p>
           <p><strong>Email:</strong> ${req["User-Email"]}</p>
+          <p><strong>Phone Number:</strong> ${req["Phone-Number"] || "N/A"}</p>
           <p><strong>Address:</strong> ${req.Address}</p>
           <p><strong>Date:</strong> ${
             req.Time?.seconds
@@ -116,7 +118,8 @@ export default function Home() {
     return (
       req["Customer-Name"]?.toLowerCase().includes(query) ||
       req["User-Email"]?.toLowerCase().includes(query) ||
-      req.Address?.toLowerCase().includes(query)
+      req.Address?.toLowerCase().includes(query) ||
+      req["Phone-Number"]?.toLowerCase().includes(query)
     );
   });
 
@@ -150,7 +153,7 @@ export default function Home() {
 
         <input
           type="text"
-          placeholder="Search by name, email, or address..."
+          placeholder="Search by name, email, address, or phone..."
           className="w-full max-w-md px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -168,6 +171,7 @@ export default function Home() {
                   {[
                     "Customer-Name",
                     "User-Email",
+                    "Phone-Number",
                     "Address",
                     "Description",
                     "Product-Links",
@@ -196,18 +200,11 @@ export default function Home() {
                     key={req.id}
                     className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
                   >
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                      {req["Customer-Name"]}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                      {req["User-Email"]}
-                    </td>
-                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">
-                      {req.Address}
-                    </td>
-                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">
-                      {req.Description}
-                    </td>
+                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Customer-Name"]}</td>
+                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["User-Email"]}</td>
+                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Phone-Number"] || "N/A"}</td>
+                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Address}</td>
+                    <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Description}</td>
                     <td className="px-4 py-3 text-blue-600 dark:text-blue-400">
                       {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
                         <div className="flex flex-col gap-1">
@@ -265,5 +262,3 @@ export default function Home() {
     </Layout>
   );
 }
-
-
