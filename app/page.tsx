@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, Eye, EyeOff } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -28,6 +28,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [showMinimalView, setShowMinimalView] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,12 +145,43 @@ export default function Home() {
       )
     ) : null;
 
+  const columns = showMinimalView
+    ? [
+        "Customer-Name",
+        "User-Email",
+        "Phone-Number",
+        "Product-Links",
+        "Quantity",
+        "Time",
+        "Message",
+      ]
+    : [
+        "Customer-Name",
+        "User-Email",
+        "Phone-Number",
+        "Address",
+        "Description",
+        "Product-Links",
+        "Quantity",
+        "Time",
+        "Message",
+      ];
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
-          User Requests
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
+            User Requests
+          </h1>
+          <button
+            onClick={() => setShowMinimalView(!showMinimalView)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full shadow bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {showMinimalView ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showMinimalView ? "Show All Columns" : "Show Fewer Columns"}
+          </button>
+        </div>
 
         <input
           type="text"
@@ -164,100 +196,93 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500 dark:text-red-400">{error}</p>
         ) : (
-          <div className="w-full overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
-            <div className="min-w-[1300px]">
-              <table className="table-auto w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                <thead className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
-                  <tr>
-                    {[
-                      "Customer-Name",
-                      "User-Email",
-                      "Phone-Number",
-                      "Address",
-                      "Description",
-                      "Product-Links",
-                      "Quantity",
-                      "Time",
-                      "Message",
-                    ].map((key) => (
-                      <th
-                        key={key}
-                        className={`px-4 py-3 text-left font-semibold uppercase ${
-                          key === "Address" || key === "Description" ? "w-64" : ""
-                        } ${key !== "Message" ? "cursor-pointer" : ""}`}
-                        onClick={() =>
-                          key !== "Message" && handleSort(key as keyof RequestData)
-                        }
-                      >
-                        {key.replace(/-/g, " ")}
-                        {renderSortIcon(key as keyof RequestData)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {sortedRequests.map((req) => (
-                    <tr
-                      key={req.id}
-                      className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-800 text-white">
+                <tr>
+                  {columns.map((key) => (
+                    <th
+                      key={key}
+                      className={`px-4 py-3 text-left font-semibold uppercase ${
+                        key === "Address" || key === "Description"
+                          ? "w-64"
+                          : ""
+                      } ${key !== "Message" ? "cursor-pointer" : ""}`}
+                      onClick={() =>
+                        key !== "Message" && handleSort(key as keyof RequestData)
+                      }
                     >
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Customer-Name"]}</td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["User-Email"]}</td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req["Phone-Number"] || "N/A"}</td>
-                      <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Address}</td>
-                      <td className="px-4 py-3 whitespace-normal w-64 text-gray-800 dark:text-gray-200">{req.Description}</td>
-                      <td className="px-4 py-3 text-blue-600 dark:text-blue-400">
-                        {Array.isArray(req["Product-Links"]) && req["Product-Links"].length > 0 ? (
+                      {key.replace(/-/g, " ")}
+                      {renderSortIcon(key as keyof RequestData)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {sortedRequests.map((req) => (
+                  <tr
+                    key={req.id}
+                    className="even:bg-gray-50 hover:bg-gray-100 dark:even:bg-gray-800 dark:hover:bg-gray-700 transition"
+                  >
+                    {columns.map((key) => (
+                      <td key={key} className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                        {key === "Product-Links" ? (
+                          Array.isArray(req["Product-Links"]) &&
+                          req["Product-Links"].length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {req["Product-Links"].map((link, i) => (
+                                <a
+                                  key={i}
+                                  href={link}
+                                  target="popup"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    window.open(link, "popup", "width=800,height=600");
+                                  }}
+                                  className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                >
+                                  Link-{i + 1}
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">
+                              No Links
+                            </span>
+                          )
+                        ) : key === "Time" ? (
+                          req.Time?.seconds
+                            ? new Date(req.Time.seconds * 1000).toLocaleString()
+                            : "N/A"
+                        ) : key === "Message" ? (
                           <div className="flex flex-col gap-1">
-                            {req["Product-Links"].map((link, i) => (
-                              <a
-                                key={i}
-                                href={link}
-                                target="popup"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  window.open(link, "popup", "width=800,height=600");
-                                }}
-                                className="underline hover:text-blue-800 dark:hover:text-blue-300"
-                              >
-                                Link-{i + 1}
-                              </a>
-                            ))}
+                            <a
+                              href={`https://wa.me/?text=Hello%20${encodeURIComponent(
+                                req["Customer-Name"]
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                            >
+                              WhatsApp
+                            </a>
+                            <button
+                              onClick={() => generateInvoice(req)}
+                              className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
+                            >
+                              <FileText size={16} />
+                              Invoice
+                            </button>
                           </div>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">No Links</span>
+                          (req as any)[key] || "N/A"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{req.Quantity}</td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
-                        {req.Time?.seconds
-                          ? new Date(req.Time.seconds * 1000).toLocaleString()
-                          : "N/A"}
-                      </td>
-                      <td className="px-4 py-3 flex flex-col gap-1">
-                        <a
-                          href={`https://wa.me/?text=Hello%20${encodeURIComponent(
-                            req["Customer-Name"]
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                        >
-                          WhatsApp
-                        </a>
-                        <button
-                          onClick={() => generateInvoice(req)}
-                          className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-800 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-700 transition"
-                        >
-                          <FileText size={16} />
-                          Invoice
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
