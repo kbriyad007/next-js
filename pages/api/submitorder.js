@@ -1,73 +1,79 @@
-import axios from 'axios';
+import axios from "axios";
+import { getDocs, collection, doc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebase"; // Make sure this is your Firebase client
+
+const sendToSteadfast = async (order) => {
+  const res = await axios.post("https://portal.packzy.com/api/v1/create_order", {
+    invoice: order.invoice,
+    recipient_name: order.recipient_name,
+    recipient_phone: order.recipient_phone,
+    recipient_address: order.recipient_address,
+    cod_amount: order.cod_amount,
+    note: order.note,
+  }, {
+    headers: {
+      "Api-Key": "your-steadfast-api-key",
+      "Secret-Key": "your-steadfast-secret-key",
+      "Content-Type": "application/json"
+    }
+  });
+
+  return res.data;
+};
+
+const sendToRedx = async (order) => {
+  const res = await axios.post("https://api.redx.com/order/create", {
+    invoice: order.invoice,
+    recipient_name: order.recipient_name,
+    recipient_phone: order.recipient_phone,
+    recipient_address: order.recipient_address,
+    cod_amount: order.cod_amount,
+    note: order.note,
+  }, {
+    headers: {
+      "Api-Key": "your-redx-api-key",
+      "Content-Type": "application/json"
+    }
+  });
+
+  return res.data;
+};
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const orderData = req.body;
+  if (req.method !== "GET") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
 
-    // Extract the selected courier from the order data
-    const { courier, ...orderDetails } = orderData;
+  try {
+    const snapshot = await getDocs(collection(db, "orders"));
 
-    try {
-      let response;
+    for (const docSnap of snapshot.docs) {
+      const order = docSnap.data();
 
-      // Check the selected courier and forward the order to the correct API
-      if (courier === 'steadfast') {
-        response = await sendToSteadfast(orderDetails);
-      } else if (courier === 'redx') {
-        response = await sendToRedx(orderDetails);
-      } else {
-        return res.status(400).json({ error: 'Invalid courier selected' });
+      // Skip if already sent
+      if (order.sent) continue;
+
+      try {
+        if (order.courier === "steadfast") {
+          await sendToSteadfast(order);
+        } else if (order.courier === "redx") {
+          await sendToRedx(order);
+        }
+
+        // Mark as sent
+        await updateDoc(doc(db, "orders", docSnap.id), {
+          sent: true,
+        });
+
+        console.log("Sent order:", order.invoice);
+      } catch (err) {
+        console.error("Error sending order:", err.message);
       }
-
-      // Send a success response with the result from the courier API
-      return res.status(200).json(response.data);
-
-    } catch (error) {
-      console.error('Error submitting order:', error);
-      return res.status(500).json({ error: 'Error submitting order to courier' });
     }
-  } else {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+
+    return res.status(200).json({ message: "All orders processed" });
+  } catch (error) {
+    console.error("Failed to process orders:", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
-
-// Function to send the order data to Steadfast
-const sendToSteadfast = async (orderDetails) => {
-  const url = 'https://portal.packzy.com/api/v1/create_order';
-  const headers = {
-    'Content-Type': 'application/json',
-    'Api-Key': process.env.STEADFAST_API_KEY,
-    'Secret-Key': process.env.STEADFAST_SECRET_KEY,
-  };
-
-  const data = {
-    invoice: orderDetails.invoice,
-    recipient_name: orderDetails.recipient_name,
-    recipient_phone: orderDetails.recipient_phone,
-    recipient_address: orderDetails.recipient_address,
-    cod_amount: orderDetails.cod_amount,
-    note: orderDetails.note,
-  };
-
-  return await axios.post(url, data, { headers });
-};
-
-// Function to send the order data to Redx
-const sendToRedx = async (orderDetails) => {
-  const url = 'https://api.redx.com/order/create'; // Adjust URL based on Redx API documentation
-  const headers = {
-    'Content-Type': 'application/json',
-    'Api-Key': process.env.REDX_API_KEY,
-  };
-
-  const data = {
-    invoice: orderDetails.invoice,
-    recipient_name: orderDetails.recipient_name,
-    recipient_phone: orderDetails.recipient_phone,
-    recipient_address: orderDetails.recipient_address,
-    cod_amount: orderDetails.cod_amount,
-    note: orderDetails.note,
-  };
-
-  return await axios.post(url, data, { headers });
-};
