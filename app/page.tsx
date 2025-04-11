@@ -13,6 +13,7 @@ type RequestData = {
   "Phone-Number"?: string;
   Address: string;
   Description: string;
+  Courier?: string; // ✅ Added Courier field
   Quantity: number;
   Time?: {
     seconds: number;
@@ -34,6 +35,7 @@ export default function Home() {
     "Customer-Name",
     "User-Email",
     "Phone-Number",
+    "Courier", // ✅ Added Courier to minimal
     "Product-Links",
     "Quantity",
     "Time",
@@ -44,6 +46,7 @@ export default function Home() {
     "Customer-Name",
     "User-Email",
     "Phone-Number",
+    "Courier", // ✅ Added Courier to full columns
     "Address",
     "Description",
     "Product-Links",
@@ -93,131 +96,19 @@ export default function Home() {
       <html>
         <head>
           <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body {
-              font-family: 'Inter', 'Segoe UI', sans-serif;
-              margin: 0;
-              padding: 0;
-              background: #f0f2f5;
-              color: #1f2937;
-            }
-            .invoice-container {
-              max-width: 800px;
-              margin: 40px auto;
-              background: white;
-              border-radius: 12px;
-              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-              padding: 40px;
-            }
-            .brand {
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              margin-bottom: 24px;
-            }
-            .brand h1 {
-              font-size: 24px;
-              font-weight: 700;
-              color: #2563eb;
-              margin: 0;
-            }
-            .brand .date {
-              font-size: 14px;
-              color: #6b7280;
-            }
-            .section {
-              margin-bottom: 24px;
-            }
-            .section h2 {
-              font-size: 16px;
-              margin-bottom: 8px;
-              color: #111827;
-              border-bottom: 1px solid #e5e7eb;
-              padding-bottom: 4px;
-            }
-            .section p {
-              margin: 4px 0;
-              font-size: 14px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 12px;
-              font-size: 14px;
-            }
-            th, td {
-              padding: 12px;
-              border: 1px solid #e5e7eb;
-            }
-            th {
-              background-color: #f9fafb;
-              text-align: left;
-              color: #374151;
-            }
-            td {
-              color: #1f2937;
-            }
-            .product-links {
-              margin-top: 12px;
-            }
-            .product-links a {
-              color: #2563eb;
-              text-decoration: none;
-            }
-            .footer {
-              margin-top: 40px;
-              text-align: center;
-              font-size: 13px;
-              color: #6b7280;
-            }
-            @media print {
-              .invoice-container {
-                box-shadow: none;
-                margin: 0;
-                border-radius: 0;
-                padding: 20px;
-              }
-            }
-          </style>
+          <style>body { font-family: sans-serif; }</style>
         </head>
         <body>
-          <div class="invoice-container">
-            <div class="brand">
-              <h1>MyCompany Invoice</h1>
-              <div class="date">${formattedDate}</div>
-            </div>
-
-            <div class="section">
-              <h2>Customer Details</h2>
-              <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
-              <p><strong>Email:</strong> ${req["User-Email"]}</p>
-              <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
-              <p><strong>Address:</strong> ${req.Address}</p>
-            </div>
-
-            <div class="section">
-              <h2>Order Summary</h2>
-              <table>
-                <tr>
-                  <th>Description</th>
-                  <th>Quantity</th>
-                </tr>
-                <tr>
-                  <td>${req.Description}</td>
-                  <td>${req.Quantity}</td>
-                </tr>
-              </table>
-
-              <div class="product-links">
-                <p><strong>Product Links:</strong><br>${productLinksHTML}</p>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Thank you for your request.</p>
-              <p>This invoice was generated electronically and is valid without a signature.</p>
-            </div>
-          </div>
+          <h1>Invoice</h1>
+          <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
+          <p><strong>Email:</strong> ${req["User-Email"]}</p>
+          <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
+          <p><strong>Courier:</strong> ${req.Courier || "N/A"}</p>
+          <p><strong>Address:</strong> ${req.Address}</p>
+          <p><strong>Description:</strong> ${req.Description}</p>
+          <p><strong>Quantity:</strong> ${req.Quantity}</p>
+          <p><strong>Time:</strong> ${formattedDate}</p>
+          <div><strong>Product Links:</strong><br>${productLinksHTML}</div>
           <script>window.print();</script>
         </body>
       </html>
@@ -238,7 +129,8 @@ export default function Home() {
       req["Customer-Name"]?.toLowerCase().includes(query) ||
       req["User-Email"]?.toLowerCase().includes(query) ||
       req.Address?.toLowerCase().includes(query) ||
-      req["Phone-Number"]?.toLowerCase().includes(query)
+      req["Phone-Number"]?.toLowerCase().includes(query) ||
+      req.Courier?.toLowerCase().includes(query)
     );
   });
 
@@ -256,23 +148,19 @@ export default function Home() {
 
   const renderSortIcon = (key: keyof RequestData) =>
     sortBy === key ? (
-      sortOrder === "asc" ? (
-        <ArrowUp size={14} className="inline ml-1" />
-      ) : (
-        <ArrowDown size={14} className="inline ml-1" />
-      )
+      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
     ) : null;
 
   const columns = showMinimal ? minimalColumns : allColumns;
 
   return (
     <Layout>
-      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800 min-h-screen text-white">
+      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-semibold">User Requests</h1>
           <button
             onClick={() => setShowMinimal((prev) => !prev)}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
+            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
           >
             {showMinimal ? "Full View" : "Minimal View"}
           </button>
@@ -280,30 +168,26 @@ export default function Home() {
 
         <input
           type="text"
-          placeholder="Search by name, email, address, or phone..."
-          className="w-full max-w-md px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/10 backdrop-blur-md text-white placeholder-white/60"
+          placeholder="Search..."
+          className="w-full max-w-md px-4 py-2 border rounded-xl text-black"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
         {loading ? (
-          <p className="text-white/70">Loading requests...</p>
+          <p>Loading...</p>
         ) : error ? (
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-500">{error}</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 shadow-2xl">
-            <table className="min-w-full divide-y divide-white/20 text-sm text-white">
-              <thead className="bg-white/20 backdrop-blur-sm text-white uppercase text-xs font-semibold">
+          <div className="overflow-x-auto rounded-2xl border">
+            <table className="min-w-full divide-y text-sm">
+              <thead className="bg-gray-800 text-white uppercase text-xs font-semibold">
                 <tr>
                   {columns.map((key) => (
                     <th
                       key={key}
-                      className={`px-4 py-3 text-left tracking-wide ${
-                        key === "Address" || key === "Description" ? "w-64" : ""
-                      } ${key !== "Message" ? "cursor-pointer" : ""}`}
-                      onClick={() =>
-                        key !== "Message" && handleSort(key as keyof RequestData)
-                      }
+                      className="px-4 py-3 cursor-pointer"
+                      onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
                     >
                       {key.replace(/-/g, " ")}
                       {renderSortIcon(key as keyof RequestData)}
@@ -311,36 +195,27 @@ export default function Home() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y divide-gray-700">
                 {sortedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="hover:bg-white/10 transition-colors duration-200"
-                  >
+                  <tr key={req.id}>
                     {columns.map((key) =>
                       key === "Product-Links" ? (
-                        <td key={key} className="px-4 py-3 text-blue-300">
-                          {Array.isArray(req["Product-Links"]) &&
-                          req["Product-Links"].length > 0 ? (
-                            <div className="flex flex-col gap-1">
-                              {req["Product-Links"].map((link, i) => (
-                                <a
-                                  key={i}
-                                  href={link}
-                                  target="popup"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    window.open(link, "popup", "width=800,height=600");
-                                  }}
-                                  className="underline hover:text-blue-100"
-                                >
-                                  Link-{i + 1}
-                                </a>
-                              ))}
+                        <td key={key} className="px-4 py-3 text-blue-500">
+                          {(req["Product-Links"] ?? []).map((link, i) => (
+                            <div key={i}>
+                              <a
+                                href={link}
+                                target="popup"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  window.open(link, "popup", "width=800,height=600");
+                                }}
+                                className="underline"
+                              >
+                                Link-{i + 1}
+                              </a>
                             </div>
-                          ) : (
-                            <span className="text-gray-400">No Links</span>
-                          )}
+                          ))}
                         </td>
                       ) : key === "Time" ? (
                         <td key={key} className="px-4 py-3">
@@ -349,26 +224,19 @@ export default function Home() {
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-4 py-3 flex flex-col gap-1">
+                        <td key={key} className="px-4 py-3 space-y-1">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(
-                              /[^0-9]/g,
-                              ""
-                            )}?text=${encodeURIComponent(
-                              `Hello ${req["Customer-Name"]}, I received your request.`
-                            )}`}
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
                             target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-400 hover:text-green-300"
+                            className="text-green-400 underline block"
                           >
                             WhatsApp
                           </a>
                           <button
                             onClick={() => generateInvoice(req)}
-                            className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-indigo-300 bg-indigo-700/30 backdrop-blur-md rounded-full hover:bg-indigo-600/30 transition"
+                            className="text-blue-300 underline text-sm"
                           >
-                            <FileText size={16} />
-                            Invoice
+                            <FileText size={16} className="inline" /> Invoice
                           </button>
                         </td>
                       ) : (
@@ -387,6 +255,3 @@ export default function Home() {
     </Layout>
   );
 }
-
-
-
