@@ -13,7 +13,7 @@ type RequestData = {
   "Phone-Number"?: string;
   Address: string;
   Description: string;
-  Courier?: string; // ✅ Added Courier field
+  Courier?: string;
   Quantity: number;
   Time?: {
     seconds: number;
@@ -35,7 +35,7 @@ export default function Home() {
     "Customer-Name",
     "User-Email",
     "Phone-Number",
-    "Courier", // ✅ Added Courier to minimal
+    "Courier",
     "Product-Links",
     "Quantity",
     "Time",
@@ -46,7 +46,7 @@ export default function Home() {
     "Customer-Name",
     "User-Email",
     "Phone-Number",
-    "Courier", // ✅ Added Courier to full columns
+    "Courier",
     "Address",
     "Description",
     "Product-Links",
@@ -85,7 +85,9 @@ export default function Home() {
     const productLinksHTML =
       req["Product-Links"]?.map(
         (link, i) =>
-          `<a href="${link}" target="_blank">🔗 Link ${i + 1}</a><br>`
+          `<div style="margin-bottom: 5px;">
+            🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
+          </div>`
       ).join("") || "N/A";
 
     const formattedDate = req.Time?.seconds
@@ -96,19 +98,103 @@ export default function Home() {
       <html>
         <head>
           <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>body { font-family: sans-serif; }</style>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background-color: #f7f9fc;
+              padding: 40px;
+              color: #333;
+            }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              background: white;
+              padding: 30px;
+              border: 1px solid #eee;
+              border-radius: 12px;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              font-size: 28px;
+              color: #2c3e50;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #3498db;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .section h3 {
+              margin-bottom: 10px;
+              color: #555;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            }
+            .row label {
+              font-weight: bold;
+              color: #444;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              color: #aaa;
+              font-size: 12px;
+            }
+            a {
+              color: #2980b9;
+              text-decoration: none;
+            }
+            a:hover {
+              text-decoration: underline;
+            }
+          </style>
         </head>
         <body>
-          <h1>Invoice</h1>
-          <p><strong>Name:</strong> ${req["Customer-Name"]}</p>
-          <p><strong>Email:</strong> ${req["User-Email"]}</p>
-          <p><strong>Phone:</strong> ${req["Phone-Number"] || "N/A"}</p>
-          <p><strong>Courier:</strong> ${req.Courier || "N/A"}</p>
-          <p><strong>Address:</strong> ${req.Address}</p>
-          <p><strong>Description:</strong> ${req.Description}</p>
-          <p><strong>Quantity:</strong> ${req.Quantity}</p>
-          <p><strong>Time:</strong> ${formattedDate}</p>
-          <div><strong>Product Links:</strong><br>${productLinksHTML}</div>
+          <div class="invoice-box">
+            <div class="header">
+              <div class="logo">📦 ShipMate</div>
+              <h1>Invoice</h1>
+            </div>
+
+            <div class="section">
+              <h3>Customer Information</h3>
+              <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
+              <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
+              <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
+              <div class="row"><label>Address:</label> ${req.Address}</div>
+            </div>
+
+            <div class="section">
+              <h3>Order Details</h3>
+              <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
+              <div class="row"><label>Description:</label> ${req.Description}</div>
+              <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
+              <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
+            </div>
+
+            <div class="section">
+              <h3>Product Links</h3>
+              ${productLinksHTML}
+            </div>
+
+            <div class="footer">
+              ✅ Thank you for your request. We’ll be in touch shortly.<br />
+              <em>Generated by ShipMate Portal</em>
+            </div>
+          </div>
           <script>window.print();</script>
         </body>
       </html>
