@@ -82,25 +82,35 @@ export default function Home() {
 const generateInvoice = (req: RequestData) => {
   const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
 
+  const productLinks = req["Product-Links"] ?? [];
+  const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
+  const qrText = `
+    Name: ${req["Customer-Name"]}
+    Email: ${req["User-Email"]}
+    Courier: ${req.Courier || "N/A"}
+    Quantity: ${req.Quantity}
+    Product(s): ${productLinksText || "N/A"}
+  `;
+
+  const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+    qrText
+  )}&size=150x150`;
+
   const productLinksHTML =
-    req["Product-Links"]?.map(
-      (link, i) =>
-        `<div style="margin-bottom: 5px;">
-          🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
-        </div>`
-    ).join("") || "N/A";
+    productLinks.length > 0
+      ? productLinks
+          .map(
+            (link, i) =>
+              `<div style="margin-bottom: 5px;">
+                🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
+              </div>`
+          )
+          .join("")
+      : "N/A";
 
   const formattedDate = req.Time?.seconds
     ? new Date(req.Time.seconds * 1000).toLocaleString()
     : "N/A";
-
-  const phone = req["Phone-Number"]?.replace(/[^0-9]/g, "") || "";
-  const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(
-    `Hello ${req["Customer-Name"]}, I received your request.`
-  )}`;
-  const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-    whatsappLink
-  )}&size=150x150`;
 
   const htmlContent = `
     <html>
@@ -208,9 +218,9 @@ const generateInvoice = (req: RequestData) => {
           </div>
 
           <div class="qr">
-            <h3>📱 WhatsApp Contact QR</h3>
-            <img src="${qrCodeURL}" alt="QR Code for WhatsApp" />
-            <p><a href="${whatsappLink}" target="_blank">Or click here to message</a></p>
+            <h3>📦 Order Summary QR</h3>
+            <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
+            <p>Scan to view order details</p>
           </div>
 
           <div class="footer">
@@ -226,6 +236,7 @@ const generateInvoice = (req: RequestData) => {
   invoiceWindow?.document.write(htmlContent);
   invoiceWindow?.document.close();
 };
+
 
 
   const getValue = (req: RequestData, key: string): string => {
