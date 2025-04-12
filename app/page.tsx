@@ -265,28 +265,33 @@ export default function Home() {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border">
-            <table className="min-w-full divide-y text-sm">
-              <thead className="bg-gray-800 text-white uppercase text-xs font-semibold">
+          <div className="overflow-x-auto rounded-2xl border border-gray-700 shadow-lg">
+            <table className="min-w-full text-sm text-left text-gray-200">
+              <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
                 <tr>
                   {columns.map((key) => (
                     <th
                       key={key}
-                      className="px-4 py-3 cursor-pointer"
+                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
                       onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
                     >
-                      {key.replace(/-/g, " ")}
-                      {renderSortIcon(key as keyof RequestData)}
+                      <div className="flex items-center gap-1">
+                        {key.replace(/-/g, " ")}
+                        {renderSortIcon(key as keyof RequestData)}
+                      </div>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
-                  <tr key={req.id}>
+                  <tr
+                    key={req.id}
+                    className="hover:bg-gray-800 transition-colors duration-150"
+                  >
                     {columns.map((key) =>
                       key === "Product-Links" ? (
-                        <td key={key} className="px-4 py-3 text-blue-500">
+                        <td key={key} className="px-6 py-4 text-blue-400">
                           {(req["Product-Links"] ?? []).map((link, i) => (
                             <div key={i}>
                               <a
@@ -296,7 +301,7 @@ export default function Home() {
                                   e.preventDefault();
                                   window.open(link, "popup", "width=800,height=600");
                                 }}
-                                className="underline"
+                                className="underline hover:text-blue-300 transition"
                               >
                                 Link-{i + 1}
                               </a>
@@ -304,29 +309,30 @@ export default function Home() {
                           ))}
                         </td>
                       ) : key === "Time" ? (
-                        <td key={key} className="px-4 py-3">
+                        <td key={key} className="px-6 py-4">
                           {req.Time?.seconds
                             ? new Date(req.Time.seconds * 1000).toLocaleString()
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-4 py-3 space-y-1">
+                        <td key={key} className="px-6 py-4 space-y-1">
                           <a
                             href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
                             target="_blank"
-                            className="text-green-400 underline block"
+                            className="text-green-400 underline block hover:text-green-300"
                           >
                             WhatsApp
                           </a>
                           <button
                             onClick={() => generateInvoice(req)}
-                            className="text-blue-300 underline text-sm"
+                            className="text-blue-300 underline text-sm hover:text-blue-200"
                           >
-                            <FileText size={16} className="inline" /> Invoice
+                            <FileText size={16} className="inline mr-1" />
+                            Invoice
                           </button>
                         </td>
                       ) : (
-                        <td key={key} className="px-4 py-3">
+                        <td key={key} className="px-6 py-4">
                           {getValue(req, key)}
                         </td>
                       )
