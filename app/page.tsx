@@ -70,6 +70,7 @@ export default function Home() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -78,163 +79,165 @@ export default function Home() {
     setSortBy(key);
   };
 
-  const generateInvoice = (req: RequestData) => {
-    const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
+const generateInvoice = (req: RequestData) => {
+  const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
 
-    const productLinks = req["Product-Links"] ?? [];
-    const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
-    const qrText = `
-      Name: ${req["Customer-Name"]}
-      Email: ${req["User-Email"]}
-      Courier: ${req.Courier || "N/A"}
-      Quantity: ${req.Quantity}
-      Product(s): ${productLinksText || "N/A"}
-    `;
+  const productLinks = req["Product-Links"] ?? [];
+  const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
+  const qrText = `
+    Name: ${req["Customer-Name"]}
+    Email: ${req["User-Email"]}
+    Courier: ${req.Courier || "N/A"}
+    Quantity: ${req.Quantity}
+    Product(s): ${productLinksText || "N/A"}
+  `;
 
-    const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-      qrText
-    )}&size=150x150`;
+  const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+    qrText
+  )}&size=150x150`;
 
-    const productLinksHTML =
-      productLinks.length > 0
-        ? productLinks
-            .map(
-              (link, i) =>
-                `<div style="margin-bottom: 5px;">
-                  🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
-                </div>`
-            )
-            .join("")
-        : "N/A";
-
-    const formattedDate = req.Time?.seconds
-      ? new Date(req.Time.seconds * 1000).toLocaleString()
+  const productLinksHTML =
+    productLinks.length > 0
+      ? productLinks
+          .map(
+            (link, i) =>
+              `<div style="margin-bottom: 5px;">
+                🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
+              </div>`
+          )
+          .join("")
       : "N/A";
 
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              background-color: #f7f9fc;
-              padding: 40px;
-              color: #333;
-            }
-            .invoice-box {
-              max-width: 800px;
-              margin: auto;
-              background: white;
-              padding: 30px;
-              border: 1px solid #eee;
-              border-radius: 12px;
-              box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 30px;
-            }
-            .header h1 {
-              font-size: 28px;
-              color: #2c3e50;
-            }
-            .logo {
-              font-size: 24px;
-              font-weight: bold;
-              color: #3498db;
-            }
-            .section {
-              margin-bottom: 20px;
-            }
-            .section h3 {
-              margin-bottom: 10px;
-              color: #555;
-              border-bottom: 1px solid #ddd;
-              padding-bottom: 5px;
-            }
-            .row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-            }
-            .row label {
-              font-weight: bold;
-              color: #444;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 30px;
-              color: #aaa;
-              font-size: 12px;
-            }
-            a {
-              color: #2980b9;
-              text-decoration: none;
-            }
-            a:hover {
-              text-decoration: underline;
-            }
-            .qr {
-              text-align: center;
-              margin-top: 30px;
-            }
-            .qr img {
-              border: 1px solid #ddd;
-              padding: 6px;
-              border-radius: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            <div class="header">
-              <div class="logo">📦 ShipMate</div>
-              <h1>Invoice</h1>
-            </div>
+  const formattedDate = req.Time?.seconds
+    ? new Date(req.Time.seconds * 1000).toLocaleString()
+    : "N/A";
 
-            <div class="section">
-              <h3>Customer Information</h3>
-              <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
-              <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
-              <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
-              <div class="row"><label>Address:</label> ${req.Address}</div>
-            </div>
-
-            <div class="section">
-              <h3>Order Details</h3>
-              <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
-              <div class="row"><label>Description:</label> ${req.Description}</div>
-              <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
-              <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
-            </div>
-
-            <div class="section">
-              <h3>Product Links</h3>
-              ${productLinksHTML}
-            </div>
-
-            <div class="qr">
-              <h3>📦 Order Summary QR</h3>
-              <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
-              <p>Scan to view order details</p>
-            </div>
-
-            <div class="footer">
-              ✅ Thank you for your request. We’ll be in touch shortly.<br />
-              <em>Generated by ShipMate Portal</em>
-            </div>
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Invoice - ${req["Customer-Name"]}</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f7f9fc;
+            padding: 40px;
+            color: #333;
+          }
+          .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+          }
+          .header h1 {
+            font-size: 28px;
+            color: #2c3e50;
+          }
+          .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+          }
+          .section {
+            margin-bottom: 20px;
+          }
+          .section h3 {
+            margin-bottom: 10px;
+            color: #555;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+          }
+          .row label {
+            font-weight: bold;
+            color: #444;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #aaa;
+            font-size: 12px;
+          }
+          a {
+            color: #2980b9;
+            text-decoration: none;
+          }
+          a:hover {
+            text-decoration: underline;
+          }
+          .qr {
+            text-align: center;
+            margin-top: 30px;
+          }
+          .qr img {
+            border: 1px solid #ddd;
+            padding: 6px;
+            border-radius: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-box">
+          <div class="header">
+            <div class="logo">📦 ShipMate</div>
+            <h1>Invoice</h1>
           </div>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
 
-    invoiceWindow?.document.write(htmlContent);
-    invoiceWindow?.document.close();
-  };
+          <div class="section">
+            <h3>Customer Information</h3>
+            <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
+            <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
+            <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
+            <div class="row"><label>Address:</label> ${req.Address}</div>
+          </div>
+
+          <div class="section">
+            <h3>Order Details</h3>
+            <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
+            <div class="row"><label>Description:</label> ${req.Description}</div>
+            <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
+            <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
+          </div>
+
+          <div class="section">
+            <h3>Product Links</h3>
+            ${productLinksHTML}
+          </div>
+
+          <div class="qr">
+            <h3>📦 Order Summary QR</h3>
+            <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
+            <p>Scan to view order details</p>
+          </div>
+
+          <div class="footer">
+            ✅ Thank you for your request. We’ll be in touch shortly.<br />
+            <em>Generated by ShipMate Portal</em>
+          </div>
+        </div>
+        <script>window.print();</script>
+      </body>
+    </html>
+  `;
+
+  invoiceWindow?.document.write(htmlContent);
+  invoiceWindow?.document.close();
+};
+
+
 
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
@@ -274,38 +277,37 @@ export default function Home() {
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h1 className="text-4xl font-bold tracking-tight text-white">📋 User Requests</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowMinimal((prev) => !prev)}
-              className="bg-blue-600 hover:bg-blue-700 transition px-4 py-2 rounded-xl text-sm font-medium"
-            >
-              {showMinimal ? "Show Full View" : "Show Minimal View"}
-            </button>
-            <input
-              type="text"
-              placeholder="Search requests..."
-              className="px-4 py-2 rounded-xl border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-semibold">User Requests</h1>
+          <button
+            onClick={() => setShowMinimal((prev) => !prev)}
+            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
+          >
+            {showMinimal ? "Full View" : "Minimal View"}
+          </button>
         </div>
 
+        <input
+          type="text"
+          placeholder="Search..."
+          className="w-full max-w-md px-4 py-2 border rounded-xl text-black"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
         {loading ? (
-          <p className="text-center text-gray-400 py-6">Loading user requests...</p>
+          <p>Loading...</p>
         ) : error ? (
-          <p className="text-center text-red-500 py-6">{error}</p>
+          <p className="text-red-500">{error}</p>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-700 bg-gray-900 shadow-xl">
-            <table className="min-w-full text-sm text-left text-gray-300">
-              <thead className="bg-gray-800 text-white uppercase text-xs tracking-wider">
+          <div className="overflow-x-auto rounded-2xl border border-gray-700 shadow-lg">
+            <table className="min-w-full text-sm text-left text-gray-200">
+              <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
                 <tr>
                   {columns.map((key) => (
                     <th
                       key={key}
-                      className="px-6 py-4 whitespace-nowrap cursor-pointer hover:text-blue-400 transition-colors"
+                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
                       onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
                     >
                       <div className="flex items-center gap-1">
@@ -316,15 +318,15 @@ export default function Home() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700 bg-gray-950">
+              <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
                   <tr
                     key={req.id}
-                    className="hover:bg-gray-800 transition-all duration-150 ease-in-out"
+                    className="hover:bg-gray-800 transition-colors duration-150"
                   >
                     {columns.map((key) =>
                       key === "Product-Links" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400 space-y-1">
+                        <td key={key} className="px-6 py-4 text-blue-400">
                           {(req["Product-Links"] ?? []).map((link, i) => (
                             <div key={i}>
                               <a
@@ -348,19 +350,19 @@ export default function Home() {
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-6 py-4 space-y-2">
+                        <td key={key} className="px-6 py-4 space-y-1">
                           <a
                             href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
                             target="_blank"
-                            className="block bg-green-700 hover:bg-green-600 text-white text-sm px-3 py-1 rounded-lg w-fit"
+                            className="text-green-400 underline block hover:text-green-300"
                           >
-                            Message on WhatsApp
+                            WhatsApp
                           </a>
                           <button
                             onClick={() => generateInvoice(req)}
-                            className="text-blue-400 hover:text-blue-200 text-sm flex items-center gap-1"
+                            className="text-blue-300 underline text-sm hover:text-blue-200"
                           >
-                            <FileText size={16} />
+                            <FileText size={16} className="inline mr-1" />
                             Invoice
                           </button>
                         </td>
@@ -380,4 +382,5 @@ export default function Home() {
     </Layout>
   );
 }
+
 
