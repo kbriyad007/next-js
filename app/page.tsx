@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
 import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
@@ -15,10 +15,7 @@ type RequestData = {
   Description: string;
   Courier?: string;
   Quantity: number;
-  Time?: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  Time?: { seconds: number; nanoseconds: number };
   "Product-Links"?: string[];
 };
 
@@ -56,24 +53,22 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "user_request"),
-      (querySnapshot) => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "user_request"));
         const data: RequestData[] = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as RequestData[];
         setRequests(data);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Real-time error:", err);
+      } catch {
         setError("Failed to fetch data.");
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchData();
   }, []);
 
   const handleSort = (key: keyof RequestData) => {
@@ -280,6 +275,32 @@ export default function Home() {
           </button>
         </div>
 
+        {/* 🚀 Analytics Widgets */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
+          <DashboardWidget title="Total Requests" value={requests.length} />
+          <DashboardWidget
+            title="Unique Users"
+            value={new Set(requests.map((r) => r["User-Email"])).size}
+          />
+          <DashboardWidget
+            title="Total Quantity"
+            value={requests.reduce((sum, r) => sum + Number(r.Quantity || 0), 0)}
+          />
+          <DashboardWidget
+            title="Top Courier"
+            value={
+              Object.entries(
+                requests.reduce((acc, r) => {
+                  const courier = r.Courier || "Unspecified";
+                  acc[courier] = (acc[courier] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>)
+              )
+                .sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
+            }
+          />
+        </div>
+
         <input
           type="text"
           placeholder="Search..."
@@ -288,6 +309,7 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
+        {/* 🔥 Table Section */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -385,3 +407,12 @@ export default function Home() {
   );
 }
 
+// 🧠 Widget Component
+function DashboardWidget({ title, value }: { title: string; value: string | number }) {
+  return (
+    <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
+      <h3 className="text-sm text-gray-400 mb-2">{title}</h3>
+      <p className="text-3xl font-semibold">{value}</p>
+    </div>
+  );
+}
