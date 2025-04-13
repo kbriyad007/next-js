@@ -275,7 +275,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* 🚀 Analytics Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
           <DashboardWidget title="Total Requests" value={requests.length} />
           <DashboardWidget
@@ -309,7 +308,6 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* 🔥 Table Section */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -335,10 +333,7 @@ export default function Home() {
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="hover:bg-gray-800 transition-colors duration-150"
-                  >
+                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
                     {columns.map((key) =>
                       key === "Product-Links" ? (
                         <td key={key} className="px-6 py-4 text-blue-400">
@@ -390,6 +385,15 @@ export default function Home() {
                             {req["Phone-Number"]}
                           </a>
                         </td>
+                      ) : key === "User-Email" ? (
+                        <td key={key} className="px-6 py-4 text-blue-400 underline">
+                          <a
+                            href={`mailto:${req["User-Email"]}`}
+                            className="hover:text-blue-300"
+                          >
+                            {req["User-Email"]}
+                          </a>
+                        </td>
                       ) : (
                         <td key={key} className="px-6 py-4">
                           {getValue(req, key)}
@@ -407,7 +411,6 @@ export default function Home() {
   );
 }
 
-// 🧠 Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
@@ -416,4 +419,5 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
+
 
