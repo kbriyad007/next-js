@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, X } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -27,30 +27,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
-
-  const minimalColumns = [
-    "Customer-Name",
-    "User-Email",
-    "Phone-Number",
-    "Courier",
-    "Product-Links",
-    "Quantity",
-    "Time",
-    "Message",
-  ];
-
-  const allColumns = [
-    "Customer-Name",
-    "User-Email",
-    "Phone-Number",
-    "Courier",
-    "Address",
-    "Description",
-    "Product-Links",
-    "Quantity",
-    "Time",
-    "Message",
-  ];
+  const [showModal, setShowModal] = useState(false); // 🟢 Modal visibility state
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,157 +51,6 @@ export default function Home() {
   const handleSort = (key: keyof RequestData) => {
     setSortOrder(sortBy === key && sortOrder === "asc" ? "desc" : "asc");
     setSortBy(key);
-  };
-
-  const generateInvoice = (req: RequestData) => {
-    const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
-    const productLinks = req["Product-Links"] ?? [];
-    const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
-    const qrText = `
-      Name: ${req["Customer-Name"]}
-      Email: ${req["User-Email"]}
-      Courier: ${req.Courier || "N/A"}
-      Quantity: ${req.Quantity}
-      Product(s): ${productLinksText || "N/A"}
-    `;
-    const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-      qrText
-    )}&size=150x150`;
-
-    const productLinksHTML =
-      productLinks.length > 0
-        ? productLinks
-            .map(
-              (link, i) =>
-                `<div style="margin-bottom: 5px;">
-                  🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
-                </div>`
-            )
-            .join("")
-        : "N/A";
-
-    const formattedDate = req.Time?.seconds
-      ? new Date(req.Time.seconds * 1000).toLocaleString()
-      : "N/A";
-
-    const htmlContent = `
-      <html>
-        <head>
-          <title>Invoice - ${req["Customer-Name"]}</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              background-color: #f7f9fc;
-              padding: 40px;
-              color: #333;
-            }
-            .invoice-box {
-              max-width: 800px;
-              margin: auto;
-              background: white;
-              padding: 30px;
-              border: 1px solid #eee;
-              border-radius: 12px;
-              box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            }
-            .header {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 30px;
-            }
-            .header h1 {
-              font-size: 28px;
-              color: #2c3e50;
-            }
-            .logo {
-              font-size: 24px;
-              font-weight: bold;
-              color: #3498db;
-            }
-            .section {
-              margin-bottom: 20px;
-            }
-            .section h3 {
-              margin-bottom: 10px;
-              color: #555;
-              border-bottom: 1px solid #ddd;
-              padding-bottom: 5px;
-            }
-            .row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 8px;
-            }
-            .row label {
-              font-weight: bold;
-              color: #444;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 30px;
-              color: #aaa;
-              font-size: 12px;
-            }
-            a {
-              color: #2980b9;
-              text-decoration: none;
-            }
-            a:hover {
-              text-decoration: underline;
-            }
-            .qr {
-              text-align: center;
-              margin-top: 30px;
-            }
-            .qr img {
-              border: 1px solid #ddd;
-              padding: 6px;
-              border-radius: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="invoice-box">
-            <div class="header">
-              <div class="logo">📦 ShipMate</div>
-              <h1>Invoice</h1>
-            </div>
-            <div class="section">
-              <h3>Customer Information</h3>
-              <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
-              <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
-              <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
-              <div class="row"><label>Address:</label> ${req.Address}</div>
-            </div>
-            <div class="section">
-              <h3>Order Details</h3>
-              <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
-              <div class="row"><label>Description:</label> ${req.Description}</div>
-              <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
-              <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
-            </div>
-            <div class="section">
-              <h3>Product Links</h3>
-              ${productLinksHTML}
-            </div>
-            <div class="qr">
-              <h3>📦 Order Summary QR</h3>
-              <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
-              <p>Scan to view order details</p>
-            </div>
-            <div class="footer">
-              ✅ Thank you for your request. We’ll be in touch shortly.<br />
-              <em>Generated by ShipMate Portal</em>
-            </div>
-          </div>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
-
-    invoiceWindow?.document.write(htmlContent);
-    invoiceWindow?.document.close();
   };
 
   const getValue = (req: RequestData, key: string): string => {
@@ -255,27 +81,52 @@ export default function Home() {
     return 0;
   });
 
-  const renderSortIcon = (key: keyof RequestData) =>
-    sortBy === key ? (
-      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
-    ) : null;
-
-  const columns = showMinimal ? minimalColumns : allColumns;
+  const columns = showMinimal
+    ? [
+        "Customer-Name",
+        "User-Email",
+        "Phone-Number",
+        "Courier",
+        "Product-Links",
+        "Quantity",
+        "Time",
+        "Message",
+      ]
+    : [
+        "Customer-Name",
+        "User-Email",
+        "Phone-Number",
+        "Courier",
+        "Address",
+        "Description",
+        "Product-Links",
+        "Quantity",
+        "Time",
+        "Message",
+      ];
 
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap justify-between items-center gap-4">
           <h1 className="text-3xl font-semibold">User Requests</h1>
-          <button
-            onClick={() => setShowMinimal((prev) => !prev)}
-            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
-          >
-            {showMinimal ? "Full View" : "Minimal View"}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowMinimal((prev) => !prev)}
+              className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
+            >
+              {showMinimal ? "Full View" : "Minimal View"}
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 text-sm bg-green-600 rounded-xl"
+            >
+              Show Contact Info
+            </button>
+          </div>
         </div>
 
-        {/* 🚀 Analytics Widgets */}
+        {/* 🧠 Analytics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
           <DashboardWidget title="Total Requests" value={requests.length} />
           <DashboardWidget
@@ -309,7 +160,7 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* 🔥 Table Section */}
+        {/* 🧾 Table */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -327,7 +178,13 @@ export default function Home() {
                     >
                       <div className="flex items-center gap-1">
                         {key.replace(/-/g, " ")}
-                        {renderSortIcon(key as keyof RequestData)}
+                        {sortBy === key ? (
+                          sortOrder === "asc" ? (
+                            <ArrowUp size={14} />
+                          ) : (
+                            <ArrowDown size={14} />
+                          )
+                        ) : null}
                       </div>
                     </th>
                   ))}
@@ -335,10 +192,7 @@ export default function Home() {
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
-                  <tr
-                    key={req.id}
-                    className="hover:bg-gray-800 transition-colors duration-150"
-                  >
+                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
                     {columns.map((key) =>
                       key === "Product-Links" ? (
                         <td key={key} className="px-6 py-4 text-blue-400">
@@ -367,7 +221,9 @@ export default function Home() {
                       ) : key === "Message" ? (
                         <td key={key} className="px-6 py-4 space-y-1">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                              `Hello ${req["Customer-Name"]}, I received your request.`
+                            )}`}
                             target="_blank"
                             className="text-green-400 underline block hover:text-green-300"
                           >
@@ -403,11 +259,43 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* 🔲 MODAL for Contact Info */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="bg-white text-black w-full max-w-3xl rounded-xl p-6 relative overflow-auto max-h-[90vh]">
+            <button
+              className="absolute top-4 right-4 text-gray-700 hover:text-red-500"
+              onClick={() => setShowModal(false)}
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold mb-4">Contact Information</h2>
+            <table className="w-full text-left border border-gray-300">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="px-4 py-2 border">Customer Name</th>
+                  <th className="px-4 py-2 border">User Email</th>
+                  <th className="px-4 py-2 border">Phone Number</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((req) => (
+                  <tr key={req.id} className="border-t">
+                    <td className="px-4 py-2 border">{req["Customer-Name"]}</td>
+                    <td className="px-4 py-2 border">{req["User-Email"]}</td>
+                    <td className="px-4 py-2 border">{req["Phone-Number"] || "N/A"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
 
-// 🧠 Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
