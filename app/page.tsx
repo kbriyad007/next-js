@@ -5,15 +5,6 @@ import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
 import { ArrowDown, ArrowUp, FileText } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 
 type RequestData = {
   id: string;
@@ -85,6 +76,157 @@ export default function Home() {
     setSortBy(key);
   };
 
+  const generateInvoice = (req: RequestData) => {
+    const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
+    const productLinks = req["Product-Links"] ?? [];
+    const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
+    const qrText = `
+      Name: ${req["Customer-Name"]}
+      Email: ${req["User-Email"]}
+      Courier: ${req.Courier || "N/A"}
+      Quantity: ${req.Quantity}
+      Product(s): ${productLinksText || "N/A"}
+    `;
+    const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+      qrText
+    )}&size=150x150`;
+
+    const productLinksHTML =
+      productLinks.length > 0
+        ? productLinks
+            .map(
+              (link, i) =>
+                `<div style="margin-bottom: 5px;">
+                  🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
+                </div>`
+            )
+            .join("")
+        : "N/A";
+
+    const formattedDate = req.Time?.seconds
+      ? new Date(req.Time.seconds * 1000).toLocaleString()
+      : "N/A";
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Invoice - ${req["Customer-Name"]}</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background-color: #f7f9fc;
+              padding: 40px;
+              color: #333;
+            }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              background: white;
+              padding: 30px;
+              border: 1px solid #eee;
+              border-radius: 12px;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              font-size: 28px;
+              color: #2c3e50;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #3498db;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .section h3 {
+              margin-bottom: 10px;
+              color: #555;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            }
+            .row label {
+              font-weight: bold;
+              color: #444;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              color: #aaa;
+              font-size: 12px;
+            }
+            a {
+              color: #2980b9;
+              text-decoration: none;
+            }
+            a:hover {
+              text-decoration: underline;
+            }
+            .qr {
+              text-align: center;
+              margin-top: 30px;
+            }
+            .qr img {
+              border: 1px solid #ddd;
+              padding: 6px;
+              border-radius: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <div class="header">
+              <div class="logo">📦 ShipMate</div>
+              <h1>Invoice</h1>
+            </div>
+            <div class="section">
+              <h3>Customer Information</h3>
+              <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
+              <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
+              <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
+              <div class="row"><label>Address:</label> ${req.Address}</div>
+            </div>
+            <div class="section">
+              <h3>Order Details</h3>
+              <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
+              <div class="row"><label>Description:</label> ${req.Description}</div>
+              <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
+              <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
+            </div>
+            <div class="section">
+              <h3>Product Links</h3>
+              ${productLinksHTML}
+            </div>
+            <div class="qr">
+              <h3>📦 Order Summary QR</h3>
+              <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
+              <p>Scan to view order details</p>
+            </div>
+            <div class="footer">
+              ✅ Thank you for your request. We’ll be in touch shortly.<br />
+              <em>Generated by ShipMate Portal</em>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+
+    invoiceWindow?.document.write(htmlContent);
+    invoiceWindow?.document.close();
+  };
+
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
     return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
@@ -120,17 +262,6 @@ export default function Home() {
 
   const columns = showMinimal ? minimalColumns : allColumns;
 
-  const courierChartData = Object.entries(
-    requests.reduce((acc, r) => {
-      const courier = r.Courier || "Unspecified";
-      acc[courier] = (acc[courier] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([courier, count]) => ({
-    courier,
-    count,
-  }));
-
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
@@ -144,7 +275,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Dashboard widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
           <DashboardWidget title="Total Requests" value={requests.length} />
           <DashboardWidget
@@ -170,21 +300,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Analytics chart */}
-        <div className="bg-gray-900 p-6 rounded-xl shadow-md border border-gray-800">
-          <h2 className="text-xl font-semibold text-white mb-4">Courier Analytics</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={courierChartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis dataKey="courier" stroke="#ccc" />
-              <YAxis stroke="#ccc" />
-              <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "none", color: "#fff" }} />
-              <Bar dataKey="count" fill="#60a5fa" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Search */}
         <input
           type="text"
           placeholder="Search..."
@@ -193,7 +308,6 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* Data table */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -305,6 +419,9 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
+
+
+
 
 
 
