@@ -27,7 +27,6 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
-  const [showModal, setShowModal] = useState(false); // ✅ new state for modal
 
   const minimalColumns = [
     "Customer-Name",
@@ -77,6 +76,157 @@ export default function Home() {
     setSortBy(key);
   };
 
+  const generateInvoice = (req: RequestData) => {
+    const invoiceWindow = window.open("", "Invoice", "width=900,height=700");
+    const productLinks = req["Product-Links"] ?? [];
+    const productLinksText = productLinks.map((link, i) => `Link ${i + 1}: ${link}`).join(" | ");
+    const qrText = `
+      Name: ${req["Customer-Name"]}
+      Email: ${req["User-Email"]}
+      Courier: ${req.Courier || "N/A"}
+      Quantity: ${req.Quantity}
+      Product(s): ${productLinksText || "N/A"}
+    `;
+    const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+      qrText
+    )}&size=150x150`;
+
+    const productLinksHTML =
+      productLinks.length > 0
+        ? productLinks
+            .map(
+              (link, i) =>
+                `<div style="margin-bottom: 5px;">
+                  🔗 <a href="${link}" target="_blank">Product Link ${i + 1}</a>
+                </div>`
+            )
+            .join("")
+        : "N/A";
+
+    const formattedDate = req.Time?.seconds
+      ? new Date(req.Time.seconds * 1000).toLocaleString()
+      : "N/A";
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Invoice - ${req["Customer-Name"]}</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background-color: #f7f9fc;
+              padding: 40px;
+              color: #333;
+            }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              background: white;
+              padding: 30px;
+              border: 1px solid #eee;
+              border-radius: 12px;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              font-size: 28px;
+              color: #2c3e50;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #3498db;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .section h3 {
+              margin-bottom: 10px;
+              color: #555;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            }
+            .row label {
+              font-weight: bold;
+              color: #444;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              color: #aaa;
+              font-size: 12px;
+            }
+            a {
+              color: #2980b9;
+              text-decoration: none;
+            }
+            a:hover {
+              text-decoration: underline;
+            }
+            .qr {
+              text-align: center;
+              margin-top: 30px;
+            }
+            .qr img {
+              border: 1px solid #ddd;
+              padding: 6px;
+              border-radius: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <div class="header">
+              <div class="logo">📦 ShipMate</div>
+              <h1>Invoice</h1>
+            </div>
+            <div class="section">
+              <h3>Customer Information</h3>
+              <div class="row"><label>Name:</label> ${req["Customer-Name"]}</div>
+              <div class="row"><label>Email:</label> ${req["User-Email"]}</div>
+              <div class="row"><label>Phone:</label> ${req["Phone-Number"] || "N/A"}</div>
+              <div class="row"><label>Address:</label> ${req.Address}</div>
+            </div>
+            <div class="section">
+              <h3>Order Details</h3>
+              <div class="row"><label>Courier:</label> ${req.Courier || "N/A"}</div>
+              <div class="row"><label>Description:</label> ${req.Description}</div>
+              <div class="row"><label>Quantity:</label> ${req.Quantity}</div>
+              <div class="row"><label>Submitted At:</label> ${formattedDate}</div>
+            </div>
+            <div class="section">
+              <h3>Product Links</h3>
+              ${productLinksHTML}
+            </div>
+            <div class="qr">
+              <h3>📦 Order Summary QR</h3>
+              <img src="${qrCodeURL}" alt="QR Code for Order Summary" />
+              <p>Scan to view order details</p>
+            </div>
+            <div class="footer">
+              ✅ Thank you for your request. We’ll be in touch shortly.<br />
+              <em>Generated by ShipMate Portal</em>
+            </div>
+          </div>
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+
+    invoiceWindow?.document.write(htmlContent);
+    invoiceWindow?.document.close();
+  };
+
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
     return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
@@ -115,26 +265,17 @@ export default function Home() {
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
-        {/* 🔘 Top Controls */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-semibold">User Requests</h1>
-          <div className="space-x-4">
-            <button
-              onClick={() => setShowMinimal((prev) => !prev)}
-              className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
-            >
-              {showMinimal ? "Full View" : "Minimal View"}
-            </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 text-sm bg-green-600 rounded-xl"
-            >
-              Show Customer Table
-            </button>
-          </div>
+          <button
+            onClick={() => setShowMinimal((prev) => !prev)}
+            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
+          >
+            {showMinimal ? "Full View" : "Minimal View"}
+          </button>
         </div>
 
-        {/* 📊 Analytics */}
+        {/* 🚀 Analytics Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
           <DashboardWidget title="Total Requests" value={requests.length} />
           <DashboardWidget
@@ -160,7 +301,6 @@ export default function Home() {
           />
         </div>
 
-        {/* 🔍 Search */}
         <input
           type="text"
           placeholder="Search..."
@@ -169,7 +309,7 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* 📋 Main Table */}
+        {/* 🔥 Table Section */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -182,7 +322,7 @@ export default function Home() {
                   {columns.map((key) => (
                     <th
                       key={key}
-                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400"
+                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
                       onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
                     >
                       <div className="flex items-center gap-1">
@@ -195,7 +335,10 @@ export default function Home() {
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
+                  <tr
+                    key={req.id}
+                    className="hover:bg-gray-800 transition-colors duration-150"
+                  >
                     {columns.map((key) =>
                       key === "Product-Links" ? (
                         <td key={key} className="px-6 py-4 text-blue-400">
@@ -224,9 +367,7 @@ export default function Home() {
                       ) : key === "Message" ? (
                         <td key={key} className="px-6 py-4 space-y-1">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                              `Hello ${req["Customer-Name"]}, I received your request.`
-                            )}`}
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
                             target="_blank"
                             className="text-green-400 underline block hover:text-green-300"
                           >
@@ -242,12 +383,17 @@ export default function Home() {
                         </td>
                       ) : key === "Phone-Number" ? (
                         <td key={key} className="px-6 py-4 text-blue-400 underline">
-                          <a href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}>
+                          <a
+                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
+                            className="hover:text-blue-300"
+                          >
                             {req["Phone-Number"]}
                           </a>
                         </td>
                       ) : (
-                        <td key={key} className="px-6 py-4">{getValue(req, key)}</td>
+                        <td key={key} className="px-6 py-4">
+                          {getValue(req, key)}
+                        </td>
                       )
                     )}
                   </tr>
@@ -256,58 +402,12 @@ export default function Home() {
             </table>
           </div>
         )}
-
-        {/* ✅ Modal for Customer Contact Info */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center">
-            <div className="bg-white text-black w-full max-w-3xl p-6 rounded-xl shadow-lg relative">
-              <h2 className="text-xl font-semibold mb-4">Customer Contact Info</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="absolute top-3 right-4 text-gray-600 hover:text-black text-xl"
-              >
-                &times;
-              </button>
-              <div className="overflow-x-auto rounded-lg border border-gray-300">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Customer Name</th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">User Email</th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone Number</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {requests.map((req) => (
-                      <tr key={req.id}>
-                        <td className="px-6 py-4">{req["Customer-Name"]}</td>
-                        <td className="px-6 py-4">{req["User-Email"]}</td>
-                        <td className="px-6 py-4">
-                          {req["Phone-Number"] ? (
-                            <a
-                              href={`tel:${req["Phone-Number"].replace(/[^0-9+]/g, "")}`}
-                              className="text-blue-600 underline"
-                            >
-                              {req["Phone-Number"]}
-                            </a>
-                          ) : (
-                            "N/A"
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </Layout>
   );
 }
 
-// 📊 Dashboard Widget Component
+// 🧠 Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
@@ -316,3 +416,4 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
+
