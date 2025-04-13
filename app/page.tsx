@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import Layout from "../components/Layout";
 import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
@@ -56,22 +56,24 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "user_request"));
+    const unsubscribe = onSnapshot(
+      collection(db, "user_request"),
+      (querySnapshot) => {
         const data: RequestData[] = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as RequestData[];
         setRequests(data);
-      } catch {
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Real-time error:", err);
         setError("Failed to fetch data.");
-      } finally {
         setLoading(false);
       }
-    };
+    );
 
-    fetchData();
+    return () => unsubscribe();
   }, []);
 
   const handleSort = (key: keyof RequestData) => {
@@ -382,3 +384,4 @@ export default function Home() {
     </Layout>
   );
 }
+
