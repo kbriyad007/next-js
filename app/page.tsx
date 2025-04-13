@@ -20,7 +20,6 @@ type RequestData = {
 
 export default function Home() {
   const [requests, setRequests] = useState<RequestData[]>([]);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -44,17 +43,6 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const filteredRequests = requests.filter((req) => {
-    const query = search.toLowerCase();
-    return (
-      req["Customer-Name"]?.toLowerCase().includes(query) ||
-      req["User-Email"]?.toLowerCase().includes(query) ||
-      req.Address?.toLowerCase().includes(query) ||
-      req["Phone-Number"]?.toLowerCase().includes(query) ||
-      req.Courier?.toLowerCase().includes(query)
-    );
-  });
-
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
@@ -62,9 +50,9 @@ export default function Home() {
           <h1 className="text-3xl font-semibold">User Requests</h1>
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 text-sm bg-green-600 rounded-xl hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 transition rounded-xl"
           >
-            📋 View Customer Table
+            Show Customer Table
           </button>
         </div>
 
@@ -94,44 +82,52 @@ export default function Home() {
           />
         </div>
 
-        {/* 🔍 Search */}
-        <input
-          type="text"
-          placeholder="Search..."
-          className="w-full max-w-md px-4 py-2 border rounded-xl text-black"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-500">{error}</p>}
 
-        {/* Modal Popup */}
+        {/* ✅ Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-            <div className="bg-white text-black w-full max-w-4xl rounded-lg shadow-lg p-6 relative overflow-auto max-h-[90vh]">
-              <h2 className="text-xl font-bold mb-4">Customer Info Table</h2>
+          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center">
+            <div className="bg-white text-black w-full max-w-3xl p-6 rounded-xl shadow-lg relative">
+              <h2 className="text-xl font-semibold mb-4">Customer Contact Info</h2>
               <button
-                className="absolute top-3 right-4 text-gray-600 hover:text-black"
                 onClick={() => setShowModal(false)}
+                className="absolute top-3 right-4 text-gray-600 hover:text-black text-xl"
               >
-                ❌
+                &times;
               </button>
-              <table className="min-w-full text-sm text-left border border-gray-300">
-                <thead className="bg-gray-100 font-semibold text-gray-700">
-                  <tr>
-                    <th className="px-4 py-3 border">Customer Name</th>
-                    <th className="px-4 py-3 border">User Email</th>
-                    <th className="px-4 py-3 border">Phone Number</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.map((req) => (
-                    <tr key={req.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 border">{req["Customer-Name"]}</td>
-                      <td className="px-4 py-2 border">{req["User-Email"]}</td>
-                      <td className="px-4 py-2 border">{req["Phone-Number"] || "N/A"}</td>
+
+              <div className="overflow-x-auto rounded-lg border border-gray-300">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Customer Name</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">User Email</th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone Number</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {requests.map((req) => (
+                      <tr key={req.id}>
+                        <td className="px-6 py-4">{req["Customer-Name"]}</td>
+                        <td className="px-6 py-4">{req["User-Email"]}</td>
+                        <td className="px-6 py-4">
+                          {req["Phone-Number"] ? (
+                            <a
+                              href={`tel:${req["Phone-Number"].replace(/[^0-9+]/g, "")}`}
+                              className="text-blue-600 underline"
+                            >
+                              {req["Phone-Number"]}
+                            </a>
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -140,7 +136,7 @@ export default function Home() {
   );
 }
 
-// 📊 Widget Component
+// 📊 Analytics Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
@@ -149,3 +145,4 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
+
