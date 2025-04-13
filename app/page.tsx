@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText, X } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -27,7 +27,7 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
-  const [showModal, setShowModal] = useState(false); // 🟢 Modal visibility state
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,9 +53,9 @@ export default function Home() {
     setSortBy(key);
   };
 
-  const getValue = (req: RequestData, key: string): string => {
-    const value = (req as Record<string, unknown>)[key];
-    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
+  // 🔧 Stub for Invoice button
+  const generateInvoice = (req: RequestData) => {
+    alert(`Invoice feature not implemented yet.\nCustomer: ${req["Customer-Name"]}`);
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -81,34 +81,20 @@ export default function Home() {
     return 0;
   });
 
-  const columns = showMinimal
-    ? [
-        "Customer-Name",
-        "User-Email",
-        "Phone-Number",
-        "Courier",
-        "Product-Links",
-        "Quantity",
-        "Time",
-        "Message",
-      ]
-    : [
-        "Customer-Name",
-        "User-Email",
-        "Phone-Number",
-        "Courier",
-        "Address",
-        "Description",
-        "Product-Links",
-        "Quantity",
-        "Time",
-        "Message",
-      ];
+  const getValue = (req: RequestData, key: string): string => {
+    const value = (req as Record<string, unknown>)[key];
+    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
+  };
+
+  const renderSortIcon = (key: keyof RequestData) =>
+    sortBy === key ? (
+      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
+    ) : null;
 
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
-        <div className="flex flex-wrap justify-between items-center gap-4">
+        <div className="flex justify-between items-center">
           <h1 className="text-3xl font-semibold">User Requests</h1>
           <div className="flex gap-4">
             <button
@@ -121,12 +107,12 @@ export default function Home() {
               onClick={() => setShowModal(true)}
               className="px-4 py-2 text-sm bg-green-600 rounded-xl"
             >
-              Show Contact Info
+              📋 View Contact Table
             </button>
           </div>
         </div>
 
-        {/* 🧠 Analytics */}
+        {/* 🚀 Analytics Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
           <DashboardWidget title="Total Requests" value={requests.length} />
           <DashboardWidget
@@ -160,7 +146,7 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* 🧾 Table */}
+        {/* 🔥 Table Section */}
         {loading ? (
           <p>Loading...</p>
         ) : error ? (
@@ -170,132 +156,64 @@ export default function Home() {
             <table className="min-w-full text-sm text-left text-gray-200">
               <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
                 <tr>
-                  {columns.map((key) => (
-                    <th
-                      key={key}
-                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
-                      onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
-                    >
-                      <div className="flex items-center gap-1">
-                        {key.replace(/-/g, " ")}
-                        {sortBy === key ? (
-                          sortOrder === "asc" ? (
-                            <ArrowUp size={14} />
-                          ) : (
-                            <ArrowDown size={14} />
-                          )
-                        ) : null}
-                      </div>
-                    </th>
-                  ))}
+                  <th className="px-6 py-4">Customer Name</th>
+                  <th className="px-6 py-4">User Email</th>
+                  <th className="px-6 py-4">Phone Number</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-950">
                 {sortedRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
-                    {columns.map((key) =>
-                      key === "Product-Links" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400">
-                          {(req["Product-Links"] ?? []).map((link, i) => (
-                            <div key={i}>
-                              <a
-                                href={link}
-                                target="popup"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  window.open(link, "popup", "width=800,height=600");
-                                }}
-                                className="underline hover:text-blue-300 transition"
-                              >
-                                Link-{i + 1}
-                              </a>
-                            </div>
-                          ))}
-                        </td>
-                      ) : key === "Time" ? (
-                        <td key={key} className="px-6 py-4">
-                          {req.Time?.seconds
-                            ? new Date(req.Time.seconds * 1000).toLocaleString()
-                            : "N/A"}
-                        </td>
-                      ) : key === "Message" ? (
-                        <td key={key} className="px-6 py-4 space-y-1">
-                          <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                              `Hello ${req["Customer-Name"]}, I received your request.`
-                            )}`}
-                            target="_blank"
-                            className="text-green-400 underline block hover:text-green-300"
-                          >
-                            WhatsApp
-                          </a>
-                          <button
-                            onClick={() => generateInvoice(req)}
-                            className="text-blue-300 underline text-sm hover:text-blue-200"
-                          >
-                            <FileText size={16} className="inline mr-1" />
-                            Invoice
-                          </button>
-                        </td>
-                      ) : key === "Phone-Number" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400 underline">
-                          <a
-                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
-                            className="hover:text-blue-300"
-                          >
-                            {req["Phone-Number"]}
-                          </a>
-                        </td>
-                      ) : (
-                        <td key={key} className="px-6 py-4">
-                          {getValue(req, key)}
-                        </td>
-                      )
-                    )}
+                  <tr key={req.id} className="hover:bg-gray-800 transition-colors">
+                    <td className="px-6 py-4">{req["Customer-Name"]}</td>
+                    <td className="px-6 py-4">{req["User-Email"]}</td>
+                    <td className="px-6 py-4">{req["Phone-Number"]}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
 
-      {/* 🔲 MODAL for Contact Info */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="bg-white text-black w-full max-w-3xl rounded-xl p-6 relative overflow-auto max-h-[90vh]">
-            <button
-              className="absolute top-4 right-4 text-gray-700 hover:text-red-500"
-              onClick={() => setShowModal(false)}
-            >
-              <X size={20} />
-            </button>
-            <h2 className="text-xl font-bold mb-4">Contact Information</h2>
-            <table className="w-full text-left border border-gray-300">
-              <thead className="bg-gray-100 text-gray-700">
-                <tr>
-                  <th className="px-4 py-2 border">Customer Name</th>
-                  <th className="px-4 py-2 border">User Email</th>
-                  <th className="px-4 py-2 border">Phone Number</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((req) => (
-                  <tr key={req.id} className="border-t">
-                    <td className="px-4 py-2 border">{req["Customer-Name"]}</td>
-                    <td className="px-4 py-2 border">{req["User-Email"]}</td>
-                    <td className="px-4 py-2 border">{req["Phone-Number"] || "N/A"}</td>
+        {/* 📦 Modal */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+            <div className="bg-white text-black p-6 rounded-lg shadow-lg w-full max-w-3xl">
+              <h2 className="text-xl font-bold mb-4">📞 Customer Contact Info</h2>
+              <table className="min-w-full border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">Customer Name</th>
+                    <th className="p-2 border">User Email</th>
+                    <th className="p-2 border">Phone Number</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {requests.map((req) => (
+                    <tr key={req.id} className="even:bg-gray-50">
+                      <td className="p-2 border">{req["Customer-Name"]}</td>
+                      <td className="p-2 border">{req["User-Email"]}</td>
+                      <td className="p-2 border">{req["Phone-Number"]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="text-right mt-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </Layout>
   );
 }
 
+// 🧠 Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
@@ -304,3 +222,4 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
+
