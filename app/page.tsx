@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
 type RequestData = {
   id: string;
@@ -24,9 +23,6 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [showMinimal, setShowMinimal] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -48,16 +44,6 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const handleSort = (key: keyof RequestData) => {
-    setSortOrder(sortBy === key && sortOrder === "asc" ? "desc" : "asc");
-    setSortBy(key);
-  };
-
-  // 🔧 Stub for Invoice button
-  const generateInvoice = (req: RequestData) => {
-    alert(`Invoice feature not implemented yet.\nCustomer: ${req["Customer-Name"]}`);
-  };
-
   const filteredRequests = requests.filter((req) => {
     const query = search.toLowerCase();
     return (
@@ -69,47 +55,17 @@ export default function Home() {
     );
   });
 
-  const sortedRequests = [...filteredRequests].sort((a, b) => {
-    if (!sortBy) return 0;
-    const valA = a[sortBy];
-    const valB = b[sortBy];
-    if (typeof valA === "string" && typeof valB === "string") {
-      return sortOrder === "asc"
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    }
-    return 0;
-  });
-
-  const getValue = (req: RequestData, key: string): string => {
-    const value = (req as Record<string, unknown>)[key];
-    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
-  };
-
-  const renderSortIcon = (key: keyof RequestData) =>
-    sortBy === key ? (
-      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
-    ) : null;
-
   return (
     <Layout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-semibold">User Requests</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => setShowMinimal((prev) => !prev)}
-              className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
-            >
-              {showMinimal ? "Full View" : "Minimal View"}
-            </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 text-sm bg-green-600 rounded-xl"
-            >
-              📋 View Contact Table
-            </button>
-          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 text-sm bg-green-600 rounded-xl hover:bg-green-700"
+          >
+            📋 View Customer Table
+          </button>
         </div>
 
         {/* 🚀 Analytics Widgets */}
@@ -138,6 +94,7 @@ export default function Home() {
           />
         </div>
 
+        {/* 🔍 Search */}
         <input
           type="text"
           placeholder="Search..."
@@ -146,65 +103,35 @@ export default function Home() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* 🔥 Table Section */}
-        {loading ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-700 shadow-lg">
-            <table className="min-w-full text-sm text-left text-gray-200">
-              <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Customer Name</th>
-                  <th className="px-6 py-4">User Email</th>
-                  <th className="px-6 py-4">Phone Number</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 bg-gray-950">
-                {sortedRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-800 transition-colors">
-                    <td className="px-6 py-4">{req["Customer-Name"]}</td>
-                    <td className="px-6 py-4">{req["User-Email"]}</td>
-                    <td className="px-6 py-4">{req["Phone-Number"]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 📦 Modal */}
+        {/* Modal Popup */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-            <div className="bg-white text-black p-6 rounded-lg shadow-lg w-full max-w-3xl">
-              <h2 className="text-xl font-bold mb-4">📞 Customer Contact Info</h2>
-              <table className="min-w-full border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-2 border">Customer Name</th>
-                    <th className="p-2 border">User Email</th>
-                    <th className="p-2 border">Phone Number</th>
+          <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div className="bg-white text-black w-full max-w-4xl rounded-lg shadow-lg p-6 relative overflow-auto max-h-[90vh]">
+              <h2 className="text-xl font-bold mb-4">Customer Info Table</h2>
+              <button
+                className="absolute top-3 right-4 text-gray-600 hover:text-black"
+                onClick={() => setShowModal(false)}
+              >
+                ❌
+              </button>
+              <table className="min-w-full text-sm text-left border border-gray-300">
+                <thead className="bg-gray-100 font-semibold text-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 border">Customer Name</th>
+                    <th className="px-4 py-3 border">User Email</th>
+                    <th className="px-4 py-3 border">Phone Number</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {requests.map((req) => (
-                    <tr key={req.id} className="even:bg-gray-50">
-                      <td className="p-2 border">{req["Customer-Name"]}</td>
-                      <td className="p-2 border">{req["User-Email"]}</td>
-                      <td className="p-2 border">{req["Phone-Number"]}</td>
+                  {filteredRequests.map((req) => (
+                    <tr key={req.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-2 border">{req["Customer-Name"]}</td>
+                      <td className="px-4 py-2 border">{req["User-Email"]}</td>
+                      <td className="px-4 py-2 border">{req["Phone-Number"] || "N/A"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="text-right mt-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -213,7 +140,7 @@ export default function Home() {
   );
 }
 
-// 🧠 Widget Component
+// 📊 Widget Component
 function DashboardWidget({ title, value }: { title: string; value: string | number }) {
   return (
     <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
@@ -222,4 +149,3 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
-
