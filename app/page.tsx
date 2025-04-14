@@ -360,14 +360,7 @@ export default function Home() {
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-6 py-4 space-y-1">
-                          <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
-                            target="_blank"
-                            className="text-green-400 underline block hover:text-green-300"
-                          >
-                            WhatsApp
-                          </a>
+                        <td key={key} className="px-6 py-4">
                           <button
                             onClick={() => generateInvoice(req)}
                             className="text-blue-300 underline text-sm hover:text-blue-200"
@@ -379,8 +372,9 @@ export default function Home() {
                       ) : key === "Phone-Number" ? (
                         <td key={key} className="px-6 py-4 text-green-400 underline">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}`}
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="hover:text-green-300"
                           >
                             {req["Phone-Number"]}
