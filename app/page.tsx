@@ -411,11 +411,3 @@ Thank you for your order! 🙏
   );
 }
 
-function DashboardWidget({ title, value }: { title: string; value: string | number }) {
-  return (
-    <div className="bg-gray-900 p-5 rounded-xl shadow-md border border-gray-800">
-      <h3 className="text-sm text-gray-400 mb-2">{title}</h3>
-      <p className="text-3xl font-semibold">{value}</p>
-    </div>
-  );
-}
