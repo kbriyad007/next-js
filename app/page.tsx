@@ -27,9 +27,11 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
+  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
 
   const minimalColumns = [
     "Customer-Name",
+    "Status",
     "User-Email",
     "Phone-Number",
     "Courier",
@@ -41,6 +43,7 @@ export default function Home() {
 
   const allColumns = [
     "Customer-Name",
+    "Status",
     "User-Email",
     "Phone-Number",
     "Courier",
@@ -225,6 +228,12 @@ export default function Home() {
 
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
+
+    // Update status
+    setStatusMap((prev) => ({
+      ...prev,
+      [req.id]: "📧 Email Sent",
+    }));
   };
 
   const generateWhatsAppInvoiceLink = (req: RequestData) => {
@@ -321,7 +330,7 @@ Thank you for your order! 🙏
                     <th
                       key={key}
                       className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
-                      onClick={() => key !== "Message" && handleSort(key as keyof RequestData)}
+                      onClick={() => key !== "Message" && key !== "Status" && handleSort(key as keyof RequestData)}
                     >
                       <div className="flex items-center gap-1">
                         {key.replace(/-/g, " ")}
@@ -365,6 +374,12 @@ Thank you for your order! 🙏
                             href={generateWhatsAppInvoiceLink(req)}
                             target="_blank"
                             className="text-green-400 underline block hover:text-green-300"
+                            onClick={() =>
+                              setStatusMap((prev) => ({
+                                ...prev,
+                                [req.id]: "✅ Sent to WhatsApp",
+                              }))
+                            }
                           >
                             WhatsApp
                           </a>
@@ -394,6 +409,10 @@ Thank you for your order! 🙏
                             {req["User-Email"]}
                           </a>
                         </td>
+                      ) : key === "Status" ? (
+                        <td key={key} className="px-6 py-4 text-yellow-300 text-sm">
+                          {statusMap[req.id] || "—"}
+                        </td>
                       ) : (
                         <td key={key} className="px-6 py-4">
                           {getValue(req, key)}
@@ -410,4 +429,3 @@ Thank you for your order! 🙏
     </Layout>
   );
 }
-
