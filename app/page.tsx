@@ -227,6 +227,31 @@ export default function Home() {
     invoiceWindow?.document.close();
   };
 
+  const generateWhatsAppInvoiceLink = (req: RequestData) => {
+    const phone = (req["Phone-Number"] || "").replace(/\D/g, "");
+    const formattedDate = req.Time?.seconds
+      ? new Date(req.Time.seconds * 1000).toLocaleDateString()
+      : "N/A";
+
+    const message = `
+Hello ${req["Customer-Name"] || "Customer"}, 👋
+
+Here is your order summary:
+
+🧾 Invoice ID: ${req.id}
+📦 Courier: ${req.Courier || "N/A"}
+🔢 Quantity: ${req.Quantity || "N/A"}
+🔗 Product Links:
+${(req["Product-Links"] || []).map((link, i) => `${i + 1}. ${link}`).join("\n")}
+
+📅 Order Date: ${formattedDate}
+
+Thank you for your order! 🙏
+    `;
+
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  };
+
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
     return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
@@ -273,31 +298,6 @@ export default function Home() {
           >
             {showMinimal ? "Full View" : "Minimal View"}
           </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
-          <DashboardWidget title="Total Requests" value={requests.length} />
-          <DashboardWidget
-            title="Unique Users"
-            value={new Set(requests.map((r) => r["User-Email"])).size}
-          />
-          <DashboardWidget
-            title="Total Quantity"
-            value={requests.reduce((sum, r) => sum + Number(r.Quantity || 0), 0)}
-          />
-          <DashboardWidget
-            title="Top Courier"
-            value={
-              Object.entries(
-                requests.reduce((acc, r) => {
-                  const courier = r.Courier || "Unspecified";
-                  acc[courier] = (acc[courier] || 0) + 1;
-                  return acc;
-                }, {} as Record<string, number>)
-              )
-                .sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
-            }
-          />
         </div>
 
         <input
@@ -360,7 +360,14 @@ export default function Home() {
                             : "N/A"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-6 py-4">
+                        <td key={key} className="px-6 py-4 space-y-1">
+                          <a
+                            href={generateWhatsAppInvoiceLink(req)}
+                            target="_blank"
+                            className="text-green-400 underline block hover:text-green-300"
+                          >
+                            WhatsApp
+                          </a>
                           <button
                             onClick={() => generateInvoice(req)}
                             className="text-blue-300 underline text-sm hover:text-blue-200"
@@ -370,12 +377,10 @@ export default function Home() {
                           </button>
                         </td>
                       ) : key === "Phone-Number" ? (
-                        <td key={key} className="px-6 py-4 text-green-400 underline">
+                        <td key={key} className="px-6 py-4 text-blue-400 underline">
                           <a
-                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hello ${req["Customer-Name"]}, I received your request.`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-green-300"
+                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
+                            className="hover:text-blue-300"
                           >
                             {req["Phone-Number"]}
                           </a>
