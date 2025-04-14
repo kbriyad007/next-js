@@ -377,10 +377,11 @@ export default function Home() {
                           </button>
                         </td>
                       ) : key === "Phone-Number" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400 underline">
+                        <td key={key} className="px-6 py-4 text-green-400 underline">
                           <a
-                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
-                            className="hover:text-blue-300"
+                            href={`https://wa.me/${req["Phone-Number"]?.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            className="hover:text-green-300"
                           >
                             {req["Phone-Number"]}
                           </a>
@@ -419,9 +420,3 @@ function DashboardWidget({ title, value }: { title: string; value: string | numb
     </div>
   );
 }
-
-
-
-
-
-
