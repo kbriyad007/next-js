@@ -285,13 +285,17 @@ Best regards, ShipMate`;
   );
 
   const sortedRequests = filteredRequests.sort((a, b) => {
-    if (!sortBy) return 0;
-    if (sortOrder === "asc") {
-      return a[sortBy] > b[sortBy] ? 1 : -1;
-    } else {
-      return a[sortBy] < b[sortBy] ? 1 : -1;
-    }
-  });
+  if (!sortBy) return 0;
+
+  // Cast sortBy to keyof RequestData to ensure it's always a valid key
+  const key = sortBy as keyof RequestData;
+
+  if (sortOrder === "asc") {
+    return a[key] > b[key] ? 1 : -1;
+  } else {
+    return a[key] < b[key] ? 1 : -1;
+  }
+});
 
   return (
     <Layout>
