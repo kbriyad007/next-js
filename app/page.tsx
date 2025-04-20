@@ -120,7 +120,7 @@ export default function Home() {
             .join("")
         : "N/A";
 
-    const formattedDate = req.Time?.seconds
+    const formattedDate = req.Time
       ? new Date(req.Time.seconds * 1000).toLocaleString()
       : "N/A";
 
@@ -251,7 +251,7 @@ export default function Home() {
 
   const generateWhatsAppInvoiceLink = (req: RequestData) => {
     const phone = (req["Phone-Number"] || "").replace(/\D/g, "");
-    const formattedDate = req.Time?.seconds
+    const formattedDate = req.Time
       ? new Date(req.Time.seconds * 1000).toLocaleDateString()
       : "N/A";
 
