@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "../lib/firebase";  // Import the Firebase db from lib
-import { collection, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
 import { ArrowDown, ArrowUp, FileText } from "lucide-react";
 
@@ -64,20 +64,6 @@ export default function Home() {
           ...doc.data(),
         })) as RequestData[];
         setRequests(data);
-
-        // Fetch order status from Firestore
-        const statusPromises = data.map(async (req) => {
-          const statusDocRef = doc(db, "order_status", req.id);
-          const statusDoc = await getDoc(statusDocRef);
-          if (statusDoc.exists()) {
-            setStatusMap((prev) => ({
-              ...prev,
-              [req.id]: statusDoc.data()?.status || "—",
-            }));
-          }
-        });
-
-        await Promise.all(statusPromises);
       } catch {
         setError("Failed to fetch data.");
       } finally {
@@ -120,7 +106,7 @@ export default function Home() {
             .join("")
         : "N/A";
 
-    const formattedDate = req.Time
+    const formattedDate = req.Time?.seconds
       ? new Date(req.Time.seconds * 1000).toLocaleString()
       : "N/A";
 
@@ -243,15 +229,16 @@ export default function Home() {
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
 
-    // Update status in Firestore
-    const statusDocRef = doc(db, "order_status", req.id);
-    setDoc(statusDocRef, { status: "📧 Email Sent" });
-    setStatusMap((prev) => ({ ...prev, [req.id]: "📧 Email Sent" }));
+    // Update status
+    setStatusMap((prev) => ({
+      ...prev,
+      [req.id]: "📧 Email Sent",
+    }));
   };
 
   const generateWhatsAppInvoiceLink = (req: RequestData) => {
     const phone = (req["Phone-Number"] || "").replace(/\D/g, "");
-    const formattedDate = req.Time
+    const formattedDate = req.Time?.seconds
       ? new Date(req.Time.seconds * 1000).toLocaleDateString()
       : "N/A";
 
@@ -264,116 +251,180 @@ Here is your order summary:
 📦 Courier: ${req.Courier || "N/A"}
 🔢 Quantity: ${req.Quantity || "N/A"}
 🔗 Product Links:
-${(req["Product-Links"] || []).map((link, i) => `  ${i + 1}. ${link}`).join("\n")}
+${(req["Product-Links"] || []).map((link, i) => `${i + 1}. ${link}`).join("\n")}
+
 📅 Order Date: ${formattedDate}
 
-Best regards, ShipMate`;
+Thank you for your order! 🙏
+    `;
 
-    const whatsappLink = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappLink, "_blank");
-
-    // Update status in Firestore
-    const statusDocRef = doc(db, "order_status", req.id);
-    setDoc(statusDocRef, { status: "✅ Sent to WhatsApp" });
-    setStatusMap((prev) => ({ ...prev, [req.id]: "✅ Sent to WhatsApp" }));
+    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   };
 
-  const filteredRequests = requests.filter((request) =>
-    `${request["Customer-Name"]} ${request["User-Email"]}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const getValue = (req: RequestData, key: string): string => {
+    const value = (req as Record<string, unknown>)[key];
+    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
+  };
 
-const sortedRequests = filteredRequests; // Just skip sorting
+  const filteredRequests = requests.filter((req) => {
+    const query = search.toLowerCase();
+    return (
+      req["Customer-Name"]?.toLowerCase().includes(query) ||
+      req["User-Email"]?.toLowerCase().includes(query) ||
+      req.Address?.toLowerCase().includes(query) ||
+      req["Phone-Number"]?.toLowerCase().includes(query) ||
+      req.Courier?.toLowerCase().includes(query)
+    );
+  });
 
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    if (!sortBy) return 0;
+    const valA = a[sortBy];
+    const valB = b[sortBy];
+    if (typeof valA === "string" && typeof valB === "string") {
+      return sortOrder === "asc"
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    }
+    return 0;
+  });
+
+  const renderSortIcon = (key: keyof RequestData) =>
+    sortBy === key ? (
+      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
+    ) : null;
+
+  const columns = showMinimal ? minimalColumns : allColumns;
 
   return (
     <Layout>
-      <div className="container">
+      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-semibold">User Requests</h1>
+          <button
+            onClick={() => setShowMinimal((prev) => !prev)}
+            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
+          >
+            {showMinimal ? "Full View" : "Minimal View"}
+          </button>
+        </div>
+
         <input
           type="text"
+          placeholder="Search..."
+          className="w-full max-w-md px-4 py-2 border rounded-xl text-black"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by customer or email"
         />
 
-        {loading && <p>Loading...</p>}
-        {error && <p>{error}</p>}
-
-        <table>
-          <thead>
-            <tr>
-              {showMinimal
-                ? minimalColumns.map((col) => <th key={col}>{col}</th>)
-                : allColumns.map((col) => (
-                    <th key={col}>
-                      <button onClick={() => handleSort(col as keyof RequestData)}>
-                        {col}{" "}
-                        {sortBy === col &&
-                          (sortOrder === "asc" ? <ArrowUp /> : <ArrowDown />)}
-                      </button>
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-gray-700 shadow-lg">
+            <table className="min-w-full text-sm text-left text-gray-200">
+              <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
+                <tr>
+                  {columns.map((key) => (
+                    <th
+                      key={key}
+                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
+                      onClick={() => key !== "Message" && key !== "Status" && handleSort(key as keyof RequestData)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {key.replace(/-/g, " ")}
+                        {renderSortIcon(key as keyof RequestData)}
+                      </div>
                     </th>
                   ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sortedRequests.map((request) => (
-              <tr key={request.id}>
-                {showMinimal ? (
-                  <>
-                    <td>{request["Customer-Name"]}</td>
-                    <td>{statusMap[request.id]}</td>
-                    <td>{request["User-Email"]}</td>
-                    <td>{request["Phone-Number"]}</td>
-                    <td>{request.Courier}</td>
-                    <td>
-                      <button onClick={() => generateWhatsAppInvoiceLink(request)}>
-                        WhatsApp
-                      </button>
-                    </td>
-                    <td>
-                      <button onClick={() => generateInvoice(request)}>
-                        <FileText />
-                      </button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td>{request["Customer-Name"]}</td>
-                    <td>{statusMap[request.id]}</td>
-                    <td>{request["User-Email"]}</td>
-                    <td>{request["Phone-Number"]}</td>
-                    <td>{request.Courier}</td>
-                    <td>{request.Address}</td>
-                    <td>{request.Description}</td>
-                    <td>{request["Product-Links"]?.join(", ")}</td>
-                    <td>{request.Quantity}</td>
-                    <td>
-  {request.Time?.seconds
-    ? new Date(request.Time.seconds * 1000).toLocaleString()
-    : "N/A"}
-</td>
-                   
-                    <td>
-                      <button onClick={() => generateWhatsAppInvoiceLink(request)}>
-                        WhatsApp
-                      </button>
-                    </td>
-                    <td>
-                      <button onClick={() => generateInvoice(request)}>
-                        <FileText />
-                      </button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <button onClick={() => setShowMinimal(!showMinimal)}>
-          Toggle View {showMinimal ? "Full" : "Minimal"}
-        </button>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 bg-gray-950">
+                {sortedRequests.map((req) => (
+                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
+                    {columns.map((key) =>
+                      key === "Product-Links" ? (
+                        <td key={key} className="px-6 py-4 text-blue-400">
+                          {(req["Product-Links"] ?? []).map((link, i) => (
+                            <div key={i}>
+                              <a
+                                href={link}
+                                target="popup"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  window.open(link, "popup", "width=800,height=600");
+                                }}
+                                className="underline hover:text-blue-300 transition"
+                              >
+                                Link-{i + 1}
+                              </a>
+                            </div>
+                          ))}
+                        </td>
+                      ) : key === "Time" ? (
+                        <td key={key} className="px-6 py-4">
+                          {req.Time?.seconds
+                            ? new Date(req.Time.seconds * 1000).toLocaleString()
+                            : "N/A"}
+                        </td>
+                      ) : key === "Message" ? (
+                        <td key={key} className="px-6 py-4 space-y-1">
+                          <a
+                            href={generateWhatsAppInvoiceLink(req)}
+                            target="_blank"
+                            className="text-green-400 underline block hover:text-green-300"
+                            onClick={() =>
+                              setStatusMap((prev) => ({
+                                ...prev,
+                                [req.id]: "✅ Sent to WhatsApp",
+                              }))
+                            }
+                          >
+                            WhatsApp
+                          </a>
+                          <button
+                            onClick={() => generateInvoice(req)}
+                            className="text-blue-300 underline text-sm hover:text-blue-200"
+                          >
+                            <FileText size={16} className="inline mr-1" />
+                            Invoice
+                          </button>
+                        </td>
+                      ) : key === "Phone-Number" ? (
+                        <td key={key} className="px-6 py-4 text-blue-400 underline">
+                          <a
+                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
+                            className="hover:text-blue-300"
+                          >
+                            {req["Phone-Number"]}
+                          </a>
+                        </td>
+                      ) : key === "User-Email" ? (
+                        <td key={key} className="px-6 py-4 text-blue-400 underline">
+                          <a
+                            href={`mailto:${req["User-Email"]}`}
+                            className="hover:text-blue-300"
+                          >
+                            {req["User-Email"]}
+                          </a>
+                        </td>
+                      ) : key === "Status" ? (
+                        <td key={key} className="px-6 py-4 text-yellow-300 text-sm">
+                          {statusMap[req.id] || "—"}
+                        </td>
+                      ) : (
+                        <td key={key} className="px-6 py-4">
+                          {getValue(req, key)}
+                        </td>
+                      )
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </Layout>
   );
