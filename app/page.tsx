@@ -353,7 +353,7 @@ const sortedRequests = filteredRequests; // Just skip sorting
     ? new Date(request.Time.seconds * 1000).toLocaleString()
     : "N/A"}
 </td>
-                    <td>{request.Message}</td>
+                   
                     <td>
                       <button onClick={() => generateWhatsAppInvoiceLink(request)}>
                         WhatsApp
