@@ -256,108 +256,116 @@ Thank you for your order! 🙏
 
   const getValue = (req: RequestData, key: string): string => {
     const value = (req as Record<string, unknown>)[key];
-    return typeof value === "string" || typeof value === "number" ? String(value) : "N/A";
+    return value ? String(value) : "N/A";
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
   };
 
   const filteredRequests = requests.filter((req) => {
-    const query = search.toLowerCase();
+    const searchTerm = search.toLowerCase();
     return (
-      req["Customer-Name"]?.toLowerCase().includes(query) ||
-      req["User-Email"]?.toLowerCase().includes(query) ||
-      req.Address?.toLowerCase().includes(query) ||
-      req["Phone-Number"]?.toLowerCase().includes(query) ||
-      req.Courier?.toLowerCase().includes(query)
+      req["Customer-Name"]?.toLowerCase().includes(searchTerm) ||
+      req["User-Email"]?.toLowerCase().includes(searchTerm) ||
+      req["Phone-Number"]?.toLowerCase().includes(searchTerm) ||
+      req["Courier"]?.toLowerCase().includes(searchTerm) ||
+      req["Product-Links"]?.some((link) =>
+        link.toLowerCase().includes(searchTerm)
+      )
     );
   });
 
-  const sortedRequests = [...filteredRequests].sort((a, b) => {
+  const sortedRequests = filteredRequests.sort((a, b) => {
     if (!sortBy) return 0;
-    const valA = a[sortBy];
-    const valB = b[sortBy];
-    if (typeof valA === "string" && typeof valB === "string") {
+
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+
+    if (typeof aValue === "string" && typeof bValue === "string") {
       return sortOrder === "asc"
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+    if (typeof aValue === "number" && typeof bValue === "number") {
+      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
     }
     return 0;
   });
 
-  const renderSortIcon = (key: keyof RequestData) =>
-    sortBy === key ? (
-      sortOrder === "asc" ? <ArrowUp size={12} className="inline ml-1" /> : <ArrowDown size={12} className="inline ml-1" />
-    ) : null;
-
-  const columns = showMinimal ? minimalColumns : allColumns;
-
   return (
     <Layout>
-      <div className="p-6 flex flex-col items-center space-y-4">
-        <input
-          className="p-2 rounded-md border border-gray-300"
-          type="text"
-          placeholder="Search for orders"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="space-x-4">
-          <button className="p-2 border border-gray-300 rounded-md" onClick={() => setShowMinimal(!showMinimal)}>
-            Toggle View
+      <div className="min-h-screen bg-gray-100 p-6">
+        <h1 className="text-3xl font-semibold text-gray-800 mb-4">Customer Requests</h1>
+        <div className="mb-4 flex items-center">
+          <input
+            type="text"
+            placeholder="Search for requests..."
+            value={search}
+            onChange={handleSearch}
+            className="p-2 border rounded-md shadow-sm w-full max-w-xs mr-4"
+          />
+          <button
+            onClick={() => setShowMinimal(!showMinimal)}
+            className="p-2 px-4 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700"
+          >
+            {showMinimal ? "Show Full View" : "Show Minimal View"}
           </button>
         </div>
 
-        <table className="table-auto w-full text-sm text-left">
-          <thead>
-            <tr className="text-gray-700">
-              {columns.map((col) => (
-                <th
-                  key={col}
-                  className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort(col as keyof RequestData)}
-                >
-                  {col} {renderSortIcon(col as keyof RequestData)}
-                </th>
-              ))}
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={columns.length + 1} className="text-center py-6">
-                  Loading...
-                </td>
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <table className="w-full table-auto border-collapse">
+            <thead>
+              <tr className="bg-gray-200 text-gray-600">
+                {allColumns.map((column) => (
+                  <th
+                    key={column}
+                    className="py-2 px-4 cursor-pointer text-left"
+                    onClick={() => handleSort(column as keyof RequestData)}
+                  >
+                    <div className="flex items-center">
+                      {column}
+                      {sortBy === column && (sortOrder === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </div>
+                  </th>
+                ))}
               </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={columns.length + 1} className="text-center py-6 text-red-500">
-                  {error}
-                </td>
-              </tr>
-            ) : (
-              sortedRequests.map((req) => (
-                <tr key={req.id}>
-                  {columns.map((col) => (
-                    <td key={col} className="px-4 py-2">{getValue(req, col)}</td>
-                  ))}
-                  <td className="px-4 py-2">
+            </thead>
+            <tbody>
+              {sortedRequests.map((req) => (
+                <tr key={req.id} className="border-b hover:bg-gray-50">
+                  {showMinimal
+                    ? minimalColumns.map((col) => (
+                        <td key={col} className="py-2 px-4 text-sm">{getValue(req, col)}</td>
+                      ))
+                    : allColumns.map((col) => (
+                        <td key={col} className="py-2 px-4 text-sm">{getValue(req, col)}</td>
+                      ))}
+                  <td className="py-2 px-4 text-sm">
                     <button
-                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="bg-green-600 text-white py-1 px-3 rounded-md hover:bg-green-700"
                       onClick={() => generateInvoice(req)}
                     >
                       Generate Invoice
                     </button>
-                    <button
-                      className="px-2 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 ml-2"
-                      onClick={() => window.open(generateWhatsAppInvoiceLink(req), "_blank")}
+                    <a
+                      href={generateWhatsAppInvoiceLink(req)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 bg-blue-600 text-white py-1 px-3 rounded-md hover:bg-blue-700"
                     >
-                      WhatsApp
-                    </button>
+                      Send on WhatsApp
+                    </a>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </Layout>
   );
