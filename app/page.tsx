@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import Layout from "../components/Layout";
-import { ArrowDown, ArrowUp, FileText } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react"; // Removed unused import
 
 type RequestData = {
   id: string;
@@ -27,7 +27,6 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<keyof RequestData | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showMinimal, setShowMinimal] = useState(false);
-  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
 
   const minimalColumns = [
     "Customer-Name",
@@ -228,12 +227,6 @@ export default function Home() {
 
     invoiceWindow?.document.write(htmlContent);
     invoiceWindow?.document.close();
-
-    // Update status
-    setStatusMap((prev) => ({
-      ...prev,
-      [req.id]: "📧 Email Sent",
-    }));
   };
 
   const generateWhatsAppInvoiceLink = (req: RequestData) => {
@@ -369,3 +362,4 @@ Thank you for your order! 🙏
     </Layout>
   );
 }
+
