@@ -166,7 +166,7 @@ Thank you!
 
   return (
     <Layout>
-      <div className="p-4 space-y-4 max-w-screen-2xl mx-auto text-white">
+      <div className="p-4 space-y-4 max-w-[95vw] mx-auto text-white">
         <div className="flex justify-between items-center text-sm">
           <h1 className="text-xl font-semibold">User Requests</h1>
           <button
@@ -198,7 +198,9 @@ Thank you!
                     <th
                       key={key}
                       onClick={() => key !== "Message" && key !== "Status" && handleSort(key as keyof RequestData)}
-                      className="px-4 py-2 cursor-pointer hover:text-blue-300 whitespace-nowrap"
+                      className={`px-3 py-2 cursor-pointer hover:text-blue-300 whitespace-nowrap ${
+                        key === "Quantity" ? "w-12 text-center" : ""
+                      }`}
                     >
                       <div className="flex items-center gap-1">
                         {key.replace(/-/g, " ")} {renderSortIcon(key as keyof RequestData)}
@@ -212,7 +214,7 @@ Thank you!
                   <tr key={req.id} className="hover:bg-gray-800">
                     {columns.map((key) =>
                       key === "Product-Links" ? (
-                        <td key={key} className="px-4 py-2 text-blue-400">
+                        <td key={key} className="px-3 py-1 text-blue-400">
                           {(req["Product-Links"] ?? []).map((link, i) => (
                             <div key={i}>
                               <a
@@ -230,13 +232,13 @@ Thank you!
                           ))}
                         </td>
                       ) : key === "Time" ? (
-                        <td key={key} className="px-4 py-2">
+                        <td key={key} className="px-3 py-1">
                           {req.Time?.seconds
                             ? new Date(req.Time.seconds * 1000).toLocaleString()
                             : "—"}
                         </td>
                       ) : key === "Message" ? (
-                        <td key={key} className="px-4 py-2 space-y-1">
+                        <td key={key} className="px-3 py-1 space-y-1">
                           <a
                             href={generateWhatsAppInvoiceLink(req)}
                             target="_blank"
@@ -259,7 +261,7 @@ Thank you!
                           </button>
                         </td>
                       ) : key === "Phone-Number" ? (
-                        <td key={key} className="px-4 py-2">
+                        <td key={key} className="px-3 py-1">
                           <a
                             href={`tel:${req["Phone-Number"]?.replace(/\D/g, "")}`}
                             className="text-blue-300 underline hover:text-blue-200"
@@ -268,7 +270,7 @@ Thank you!
                           </a>
                         </td>
                       ) : key === "User-Email" ? (
-                        <td key={key} className="px-4 py-2">
+                        <td key={key} className="px-3 py-1">
                           <a
                             href={`mailto:${req["User-Email"]}`}
                             className="text-blue-300 underline hover:text-blue-200"
@@ -277,11 +279,11 @@ Thank you!
                           </a>
                         </td>
                       ) : key === "Status" ? (
-                        <td key={key} className="px-4 py-2 text-yellow-300">
+                        <td key={key} className="px-3 py-1 text-yellow-300">
                           {statusMap[req.id] || "—"}
                         </td>
                       ) : (
-                        <td key={key} className="px-4 py-2">
+                        <td key={key} className={`px-3 py-1 ${key === "Quantity" ? "text-center" : ""}`}>
                           {getValue(req, key)}
                         </td>
                       )
