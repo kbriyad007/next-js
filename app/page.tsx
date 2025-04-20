@@ -291,142 +291,81 @@ Thank you for your order! 🙏
 
   const renderSortIcon = (key: keyof RequestData) =>
     sortBy === key ? (
-      sortOrder === "asc" ? <ArrowUp size={14} className="inline ml-1" /> : <ArrowDown size={14} className="inline ml-1" />
+      sortOrder === "asc" ? <ArrowUp size={12} className="inline ml-1" /> : <ArrowDown size={12} className="inline ml-1" />
     ) : null;
 
   const columns = showMinimal ? minimalColumns : allColumns;
 
   return (
     <Layout>
-      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto text-white">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-semibold">User Requests</h1>
-          <button
-            onClick={() => setShowMinimal((prev) => !prev)}
-            className="px-4 py-2 text-sm bg-blue-600 rounded-xl"
-          >
-            {showMinimal ? "Full View" : "Minimal View"}
-          </button>
-        </div>
-
+      <div className="p-6 flex flex-col items-center space-y-4">
         <input
+          className="p-2 rounded-md border border-gray-300"
           type="text"
-          placeholder="Search..."
-          className="w-full max-w-md px-4 py-2 border rounded-xl text-black"
+          placeholder="Search for orders"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className="space-x-4">
+          <button className="p-2 border border-gray-300 rounded-md" onClick={() => setShowMinimal(!showMinimal)}>
+            Toggle View
+          </button>
+        </div>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-700 shadow-lg">
-            <table className="min-w-full text-sm text-left text-gray-200">
-              <thead className="bg-gray-900 text-white uppercase text-xs tracking-wider">
-                <tr>
-                  {columns.map((key) => (
-                    <th
-                      key={key}
-                      className="px-6 py-4 cursor-pointer select-none hover:text-blue-400 transition-colors"
-                      onClick={() => key !== "Message" && key !== "Status" && handleSort(key as keyof RequestData)}
-                    >
-                      <div className="flex items-center gap-1">
-                        {key.replace(/-/g, " ")}
-                        {renderSortIcon(key as keyof RequestData)}
-                      </div>
-                    </th>
+        <table className="table-auto w-full text-sm text-left">
+          <thead>
+            <tr className="text-gray-700">
+              {columns.map((col) => (
+                <th
+                  key={col}
+                  className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort(col as keyof RequestData)}
+                >
+                  {col} {renderSortIcon(col as keyof RequestData)}
+                </th>
+              ))}
+              <th className="px-4 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={columns.length + 1} className="text-center py-6">
+                  Loading...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={columns.length + 1} className="text-center py-6 text-red-500">
+                  {error}
+                </td>
+              </tr>
+            ) : (
+              sortedRequests.map((req) => (
+                <tr key={req.id}>
+                  {columns.map((col) => (
+                    <td key={col} className="px-4 py-2">{getValue(req, col)}</td>
                   ))}
+                  <td className="px-4 py-2">
+                    <button
+                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      onClick={() => generateInvoice(req)}
+                    >
+                      Generate Invoice
+                    </button>
+                    <button
+                      className="px-2 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 ml-2"
+                      onClick={() => window.open(generateWhatsAppInvoiceLink(req), "_blank")}
+                    >
+                      WhatsApp
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800 bg-gray-950">
-                {sortedRequests.map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-800 transition-colors duration-150">
-                    {columns.map((key) =>
-                      key === "Product-Links" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400">
-                          {(req["Product-Links"] ?? []).map((link, i) => (
-                            <div key={i}>
-                              <a
-                                href={link}
-                                target="popup"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  window.open(link, "popup", "width=800,height=600");
-                                }}
-                                className="underline hover:text-blue-300 transition"
-                              >
-                                Link-{i + 1}
-                              </a>
-                            </div>
-                          ))}
-                        </td>
-                      ) : key === "Time" ? (
-                        <td key={key} className="px-6 py-4">
-                          {req.Time?.seconds
-                            ? new Date(req.Time.seconds * 1000).toLocaleString()
-                            : "N/A"}
-                        </td>
-                      ) : key === "Message" ? (
-                        <td key={key} className="px-6 py-4 space-y-1">
-                          <a
-                            href={generateWhatsAppInvoiceLink(req)}
-                            target="_blank"
-                            className="text-green-400 underline block hover:text-green-300"
-                            onClick={() =>
-                              setStatusMap((prev) => ({
-                                ...prev,
-                                [req.id]: "✅ Sent to WhatsApp",
-                              }))
-                            }
-                          >
-                            WhatsApp
-                          </a>
-                          <button
-                            onClick={() => generateInvoice(req)}
-                            className="text-blue-300 underline text-sm hover:text-blue-200"
-                          >
-                            <FileText size={16} className="inline mr-1" />
-                            Invoice
-                          </button>
-                        </td>
-                      ) : key === "Phone-Number" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400 underline">
-                          <a
-                            href={`tel:${req["Phone-Number"]?.replace(/[^0-9+]/g, "")}`}
-                            className="hover:text-blue-300"
-                          >
-                            {req["Phone-Number"]}
-                          </a>
-                        </td>
-                      ) : key === "User-Email" ? (
-                        <td key={key} className="px-6 py-4 text-blue-400 underline">
-                          <a
-                            href={`mailto:${req["User-Email"]}`}
-                            className="hover:text-blue-300"
-                          >
-                            {req["User-Email"]}
-                          </a>
-                        </td>
-                      ) : key === "Status" ? (
-                        <td key={key} className="px-6 py-4 text-yellow-300 text-sm">
-                          {statusMap[req.id] || "—"}
-                        </td>
-                      ) : (
-                        <td key={key} className="px-6 py-4">
-                          {getValue(req, key)}
-                        </td>
-                      )
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </Layout>
   );
 }
-
