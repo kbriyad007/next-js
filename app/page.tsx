@@ -348,7 +348,11 @@ const sortedRequests = filteredRequests; // Just skip sorting
                     <td>{request.Description}</td>
                     <td>{request["Product-Links"]?.join(", ")}</td>
                     <td>{request.Quantity}</td>
-                    <td>{new Date(request.Time?.seconds * 1000).toLocaleString()}</td>
+                    <td>
+  {request.Time?.seconds
+    ? new Date(request.Time.seconds * 1000).toLocaleString()
+    : "N/A"}
+</td>
                     <td>{request.Message}</td>
                     <td>
                       <button onClick={() => generateWhatsAppInvoiceLink(request)}>
