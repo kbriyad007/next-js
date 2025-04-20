@@ -284,18 +284,8 @@ Best regards, ShipMate`;
       .includes(search.toLowerCase())
   );
 
-  const sortedRequests = filteredRequests.sort((a, b) => {
-  if (!sortBy) return 0;
+const sortedRequests = filteredRequests; // Just skip sorting
 
-  // Cast sortBy to keyof RequestData to ensure it's always a valid key
-  const key = sortBy as keyof RequestData;
-
-  if (sortOrder === "asc") {
-    return a[key] > b[key] ? 1 : -1;
-  } else {
-    return a[key] < b[key] ? 1 : -1;
-  }
-});
 
   return (
     <Layout>
